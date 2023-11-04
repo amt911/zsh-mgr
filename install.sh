@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-# DEBUG FOR PAK USER: sudo cp -r /home/andres/zsh-mgr . && sudo chown -R pak:pak zsh-mgr; touch .zshrc && chmod +x .zshrc
+# DEBUG FOR PAK USER: sudo cp -r /home/andres/zsh-mgr . && sudo chown -R pak:pak zsh-mgr; touch .zshrc && chmod +x .zshrc && sudo cp -r ~andres/.ssh . && sudo chown -R pak:pak .ssh
 # Colors
 RED='\033[0;31m'
 NO_COLOR='\033[0m'
@@ -39,7 +39,7 @@ _create_directories() {
     [ ! -d "$ZSH_CONFIG_DIR" ] && mkdir -p "$ZSH_CONFIG_DIR"
 
     # Create the plugin directory if it does not exist
-    [ ! -d "$ZSH_PLUGIN_DIR" ] && mkdir "$ZSH_PLUGIN_DIR"
+    [ ! -d "$ZSH_PLUGIN_DIR" ] && mkdir -p "$ZSH_PLUGIN_DIR"
 }
 
 
@@ -55,7 +55,7 @@ _prepend_to_file() {
 _prepend_to_config() {
     local plugin_dir="export ZSH_PLUGIN_DIR=\"$ZSH_PLUGIN_DIR\""
     local config_dir="export ZSH_CONFIG_DIR=\"\$HOME/.config/zsh\""
-    local source_file="source \$ZSH_CONFIG_DIR/zsh-mgr.zsh"
+    local source_file="source \$ZSH_CONFIG_DIR/zsh-mgr/zsh-mgr.zsh"
 
     # _prepend_to_file .zshrc "hola que tal\n"
     _prepend_to_file "$HOME/.zshrc" "$plugin_dir\n$config_dir\n\n$source_file\n\n"
@@ -97,9 +97,9 @@ if [ "$#" -eq 0 ]; then
 elif [ "$1" = "-q" ]; then
     echo "Installing quietly..."
 
-elif [ "$1" = "-zshpc" ]; then
-    echo "Special flag for personal config..."
-    exit
+# elif [ "$1" = "-zshpc" ]; then
+#     echo "Special flag for personal config..."
+#     exit
 else
     echo "Unrecognized parameter"
     exit 1
@@ -109,4 +109,4 @@ fi
 # Create the directories and prepend the lines to the config file
 _create_directories
 _prepend_to_config
-_create_symlink
+# _create_symlink
