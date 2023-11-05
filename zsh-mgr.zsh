@@ -4,6 +4,7 @@ export REPO_URL="https://github.com"
 
 # Time threshold
 export TIME_THRESHOLD=604800    # 1 week in seconds
+export MGR_TIME_THRESHOLD=10    # 1 week in seconds
 # TIME_THRESHOLD=10 # 20 hours in seconds
 
 # Colors
@@ -176,3 +177,41 @@ check_plugins_update_date() {
         echo -e "${RED}No plugins loaded/installed${NO_COLOR}"
     fi
 }
+
+# Updates the plugin manager to the latest main commit.
+update_mgr(){
+    local -r RAW_MSG="Updating zsh-mgr"     # Raw message to count character length
+    local -r MSG="Updating ${GREEN}zsh-mgr${NO_COLOR}"      # Message formatted with colors
+
+    print_message "$MSG" "$((COLUMNS - 4))" "$BRIGHT_CYAN#$NO_COLOR" "${#RAW_MSG}"
+
+    if ! git -C "$ZSH_CONFIG_DIR/zsh-mgr" pull; then
+        local -r RAW_ERR_MSG="Error updating zsh-mgr"
+        local -r ERR_MSG="${RED}Error updating zsh-mgr${NO_COLOR}"
+
+        print_message "$ERR_MSG" "$((COLUMNS - 4))" "$RED#$NO_COLOR" "${#RAW_ERR_MSG}"
+
+        return 1
+    fi
+
+    return 0
+}
+
+# Auto-updates the manager when a week has passed
+_auto_updater(){
+    # if [ ! -f "$ZSH_PLUGIN_DIR/.zsh-mgr" ]; then
+    #     date +%s >"$ZSH_PLUGIN_DIR/.zsh-mgr"
+    # fi
+    
+    # if [ $(($(date +%s) - $(cat "$ZSH_PLUGIN_DIR/.zsh-mgr"))) -ge $MGR_TIME_THRESHOLD ]; then
+    #     if update_mgr; then
+    #         date +%s >"$ZSH_PLUGIN_DIR/.zsh-mgr"
+    #     fi
+    # fi
+
+    update_mgr
+
+    echo "$?"
+}
+
+_auto_updater
