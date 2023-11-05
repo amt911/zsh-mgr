@@ -13,6 +13,10 @@ readonly NO_COLOR='\033[0m'
 readonly GREEN='\033[0;32m'
 readonly BRIGHT_CYAN='\033[0;96m'
 
+readonly MGR_PATH="$( cd -- "$( dirname -- "${(%):-%x}" )" &> /dev/null && pwd )"
+
+source "$MGR_PATH/generic-auto-updater.sh"
+
 #Sources a plugin to load it on the shell
 #$1: Plugin's author
 #$2: Plugin name
@@ -97,36 +101,6 @@ _update_plugin() {
 
 #\\033\[0;?[0-9]*m to find ansi escape codes
 
-# Prints a message given a max length. It fills the remaining space with "#"
-# $1: Message to be printed
-# $2: Max length of the message (including the message itself)
-# $3: Character to fill the remaining space. It can be colored
-# $4 (optional): Message length. Useful when it has ANSI escape codes, since it detects them as characters.
-print_message() {
-    local MSG_LENGTH=${#1}
-
-    [ $# -eq 4 ] && MSG_LENGTH="$4"
-
-    local -r MAX_LENGTH="$2"
-    local -r HASHTAG_NRO=$(((MAX_LENGTH - MSG_LENGTH - 2) / 2))
-    
-    printf "\n"
-    printf "%0.s$3" $(seq 1 "$2")
-    printf "\n"
-    printf "%0.s$3" $(seq 1 "$HASHTAG_NRO")
-
-    if [ $((MSG_LENGTH % 2)) -ne 0 ]; then
-        printf " %b  " "$1"
-    else
-        printf " %b " "$1"
-    fi
-
-    printf "%0.s$3" $(seq 1 "$HASHTAG_NRO")
-    printf "\n"
-    printf "%0.s$3" $(seq 1 "$2")
-    printf "\n"    
-}
-
 # Lists all loaded plugins
 list_plugins() {
     cd "$ZSH_PLUGIN_DIR" || exit
@@ -178,38 +152,4 @@ check_plugins_update_date() {
     fi
 }
 
-# Updates the plugin manager to the latest main commit.
-update_mgr(){
-    local -r RAW_MSG="Updating zsh-mgr"     # Raw message to count character length
-    local -r MSG="Updating ${GREEN}zsh-mgr${NO_COLOR}"      # Message formatted with colors
-
-    print_message "$MSG" "$((COLUMNS - 4))" "$BRIGHT_CYAN#$NO_COLOR" "${#RAW_MSG}"
-
-    if ! git -C "$ZSH_CONFIG_DIR/zsh-mgr" pull; then
-        local -r RAW_ERR_MSG="Error updating zsh-mgr"
-        local -r ERR_MSG="${RED}Error updating zsh-mgr${NO_COLOR}"
-
-        print_message "$ERR_MSG" "$((COLUMNS - 4))" "$RED#$NO_COLOR" "${#RAW_ERR_MSG}"
-
-        return 1
-    fi
-
-    date +%s >"$ZSH_PLUGIN_DIR/.zsh-mgr"
-
-    return 0
-}
-
-# Auto-updates the manager when a week has passed
-_auto_updater(){
-    if [ ! -f "$ZSH_PLUGIN_DIR/.zsh-mgr" ]; then
-        date +%s > "$ZSH_PLUGIN_DIR/.zsh-mgr"
-    fi
-    
-    if [ $(($(date +%s) - $(cat "$ZSH_PLUGIN_DIR/.zsh-mgr"))) -ge $MGR_TIME_THRESHOLD ]; then
-        if update_mgr; then
-            date +%s > "$ZSH_PLUGIN_DIR/.zsh-mgr"
-        fi
-    fi
-}
-
-_auto_updater
+# _auto_updater_mgr
