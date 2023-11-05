@@ -194,24 +194,22 @@ update_mgr(){
         return 1
     fi
 
+    date +%s >"$ZSH_PLUGIN_DIR/.zsh-mgr"
+
     return 0
 }
 
 # Auto-updates the manager when a week has passed
 _auto_updater(){
-    # if [ ! -f "$ZSH_PLUGIN_DIR/.zsh-mgr" ]; then
-    #     date +%s >"$ZSH_PLUGIN_DIR/.zsh-mgr"
-    # fi
+    if [ ! -f "$ZSH_PLUGIN_DIR/.zsh-mgr" ]; then
+        date +%s > "$ZSH_PLUGIN_DIR/.zsh-mgr"
+    fi
     
-    # if [ $(($(date +%s) - $(cat "$ZSH_PLUGIN_DIR/.zsh-mgr"))) -ge $MGR_TIME_THRESHOLD ]; then
-    #     if update_mgr; then
-    #         date +%s >"$ZSH_PLUGIN_DIR/.zsh-mgr"
-    #     fi
-    # fi
-
-    update_mgr
-
-    echo "$?"
+    if [ $(($(date +%s) - $(cat "$ZSH_PLUGIN_DIR/.zsh-mgr"))) -ge $MGR_TIME_THRESHOLD ]; then
+        if update_mgr; then
+            date +%s > "$ZSH_PLUGIN_DIR/.zsh-mgr"
+        fi
+    fi
 }
 
 _auto_updater
