@@ -1,11 +1,11 @@
 #!/bin/zsh
 
-# DEBUG FOR PAK USER: sudo cp -r /home/andres/zsh-mgr . && sudo chown -R pak:pak zsh-mgr; touch .zshrc && chmod +x .zshrc && sudo cp -r ~andres/.ssh . && sudo chown -R pak:pak .ssh
+# DEBUG FOR PAK USER: mkdir -p .config/zsh && sudo cp -r /home/andres/zsh-mgr .config/zsh && sudo chown -R pak:pak .config/zsh/zsh-mgr; touch .zshrc && chmod +x .zshrc && sudo cp -r ~andres/.ssh . && sudo chown -R pak:pak .ssh
 # Colors
-RED='\033[0;31m'
-NO_COLOR='\033[0m'
-GREEN='\033[0;32m'
-BRIGHT_CYAN='\033[0;96m'
+readonly RED='\033[0;31m'
+readonly NO_COLOR='\033[0m'
+readonly GREEN='\033[0;32m'
+readonly BRIGHT_CYAN='\033[0;96m'
 
 # Default plugin manager locations
 ZSH_PLUGIN_DIR="$HOME/.zsh-plugins"
@@ -53,31 +53,25 @@ _prepend_to_file() {
 }
 
 _prepend_to_config() {
-    local plugin_dir="export ZSH_PLUGIN_DIR=\"$ZSH_PLUGIN_DIR\""
-    local config_dir="export ZSH_CONFIG_DIR=\"\$HOME/.config/zsh\""
-    local source_file="source \$ZSH_CONFIG_DIR/zsh-mgr/zsh-mgr.zsh"
+    local -r PLUGIN_DIR="export ZSH_PLUGIN_DIR=\"$ZSH_PLUGIN_DIR\""
+    local -r CONFIG_DIR="export ZSH_CONFIG_DIR=\"\$HOME/.config/zsh\""
+    local -r SOURCE_FILE="source \$ZSH_CONFIG_DIR/zsh-mgr/zsh-mgr.zsh"
 
-    # _prepend_to_file .zshrc "hola que tal\n"
-    _prepend_to_file "$HOME/.zshrc" "$plugin_dir\n$config_dir\n\n$source_file\n\n"
+    _prepend_to_file "$HOME/.zshrc" "$PLUGIN_DIR\n$CONFIG_DIR\n\n$SOURCE_FILE\n\n"
 }
 
 # Creates a symbolic link to the package manager file
 _create_symlink() {
 
     # bash version
-    # local script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+    # local SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
     # zsh version
-    local script_dir="$( cd -- "$( dirname -- "${(%):-%x}" )" &> /dev/null && pwd )"
+    local -r SCRIPT_DIR="$( cd -- "$( dirname -- "${(%):-%x}" )" &> /dev/null && pwd )"
 
-    ln -sf "$script_dir/zsh-mgr.zsh" "$ZSH_CONFIG_DIR/zsh-mgr.zsh" 
+    ln -sf "$SCRIPT_DIR/zsh-mgr.zsh" "$ZSH_CONFIG_DIR/zsh-mgr.zsh" 
 }
 
-
-
-# _success_message() {
-
-# }
 
 # Check check wether .zshrc exists
 if [ ! -f "$HOME/.zshrc" ]; then
@@ -96,10 +90,6 @@ if [ "$#" -eq 0 ]; then
 # Quiet installation
 elif [ "$1" = "-q" ]; then
     echo "Installing quietly..."
-
-# elif [ "$1" = "-zshpc" ]; then
-#     echo "Special flag for personal config..."
-#     exit
 else
     echo "Unrecognized parameter"
     exit 1
