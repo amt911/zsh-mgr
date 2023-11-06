@@ -38,25 +38,89 @@ print_message() {
     printf "\n"    
 }
 
+# Expands possible aliases to home. Also included in install script.
+# $1: Path
+# return: Returns an expanded string
+_expand_home() {
+    echo "${1//(\~|\$HOME)/"$HOME"}"
+}
+
+# Converts a path to file to an absolute one.
+# 
+# $1: The path to file to be converted.
+# 
+# return: Just the absolute path to the file, without the filename.
+# 
+# note: The given path does not have to exist in order to work.
+_absolute_dirname(){
+    local dirname_var
+    local -r FILENAME=$(basename "$1")
+    
+    dirname_var=$(_expand_home "$1")            # Expands all home references
+    
+    dirname_var=${dirname_var/%\//}             # Strips the last "/"
+
+    dirname_var=${dirname_var/%"\/$FILENAME"/}  # Removes the filename
+
+    [ "$dirname_var" = "" ] && dirname_var="/"  # Adds back the root directory
+
+    echo "$dirname_var"
+}
+
+_sanitize_location(){
+    local dirname_var
+    local -r FILENAME=$(basename "$1")
+    
+    dirname_var=$(_expand_home "$1")            # Expands all home references
+    
+    dirname_var=${dirname_var/%\//}             # Strips the last "/"
+
+    [ "$dirname_var" = "" ] && dirname_var="/"  # Adds back the root directory
+
+    echo "$dirname_var"   
+}
+
 # A generic git updater for a variety of projects
 # 
 # $1: Component name to be printed. It should be just the name
 # of the plugin/component. Example: $1="zsh" -> Output: Updating zsh
 # 
-# $2: Location where the repo resides
+# $2: Location where the repo resides (including the repo folder)
 # 
-# pre: The directory must exist
+# $3 (Optional): Location where the timestamp file will be added.
+# If this argument is not used, the file will be located at $SZH_PLUGIN_DIR
+# 
+# post: A timestamp file will be added to control auto-update shedule.
 # 
 # return: 0 if everything went ok, 1 in any other case
 _generic_updater(){
     local -r RAW_MSG="Updating $1"     # Raw message to count character length
     local -r MSG="Updating ${GREEN}$1${NO_COLOR}"      # Message formatted with colors
-    local -r LOCATION="$2"
+    local -r LOCATION=$(_expand_home "$2")
+    local TIMESTAMP_LOC
     
+    # If there is no file location available, exit the function
+    if [ -z "$ZSH_PLUGIN_DIR" ] && [ "$#" -lt "3" ]; then
+        echo "${RED}Error, missing argument and no environment variable set."
+        return 1
+    fi
+
+    # Setting the timestamp file location
+    if [ "$#" -eq "3" ];then
+        TIMESTAMP_LOC=$(_sanitize_location "$3")
+        echo "Using arg $TIMESTAMP_LOC"
+    else
+        TIMESTAMP_LOC=$(_sanitize_location "$ZSH_PLUGIN_DIR")
+        echo "Using env var $TIMESTAMP_LOC"
+    fi
+
     print_message "$MSG" "$((COLUMNS - 4))" "$BRIGHT_CYAN#$NO_COLOR" "${#RAW_MSG}"
 
+    # We pull the latest commit from the repository
+    # git -C "$LOCATION" pull
+    # local -r ERR_CODE="$?"
 
-    # if ! git -C "$LOCATION" pull; then
+    # if [ $ERR_CODE -ne "0" ]; then
     #     local -r RAW_ERR_MSG="Error updating $1"
     #     local -r ERR_MSG="${RED}Error updating $1${NO_COLOR}"
 
@@ -68,13 +132,12 @@ _generic_updater(){
     # Gets the component name
     local -r COMP_NAME=$(basename "$LOCATION")
 
-    # Si se pone un directorio que no existe muestra un output muy raro
-    local -r COMP_LOC=$(cd -- "$(dirname "$LOCATION")" || exit; pwd)
-
-    echo "$COMP_NAME y $COMP_LOC"
+    # local -r DATE_FN="$COMP_LOC/.$COMP_NAME"
+    local -r DATE_FN="$TIMESTAMP_LOC/.$COMP_NAME"
+    echo "$DATE_FN"
 
     # Adds a timestamp
-    # date +%s >"$ZSH_PLUGIN_DIR/.zsh-mgr"
+    # date +%s > "$DATE_FN"
 
     return 0
 }

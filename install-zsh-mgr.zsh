@@ -11,10 +11,9 @@ readonly BRIGHT_CYAN='\033[0;96m'
 ZSH_PLUGIN_DIR="$HOME/.zsh-plugins"
 ZSH_CONFIG_DIR="$HOME/.config/zsh"
 
-# Expands possibles aliases to home
+# Expands possible aliases to home
 # $1: Path
 # return: Returns an expanded string
-
 _expand_home() {
     echo "${1//(\~|\$HOME)/"$HOME"}"    
 }
