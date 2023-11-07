@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/bin/zsh
+
+# Debería comprobar si los directorios existen?
 
 if [ "$GENERIC_AUTO_UPDATER_ZSH" != yes ]; then
     GENERIC_AUTO_UPDATER_ZSH=yes
@@ -133,8 +135,8 @@ _generic_auto_updater(){
         echo "Using env var $TIMESTAMP_LOC"
     fi    
 
-    local -r DATE_FN=$(_from_repo_to_time_file "$LOCATION" "$TIMESTAMP_LOC")
 
+    local -r DATE_FN=$(_from_repo_to_time_file "$LOCATION" "$TIMESTAMP_LOC")
 
     if [ ! -f "$DATE_FN" ] || [ $(($(date +%s) - $(cat "$DATE_FN"))) -ge "$TIME_THRESHOLD" ]; then
         echo "Tengo que actualizar"

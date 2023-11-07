@@ -18,6 +18,7 @@ export MGR_TIME_THRESHOLD=10    # 1 week in seconds
 
 source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"
 source "$ZSH_CONFIG_DIR/zsh-mgr/generic-auto-updater.sh"
+source "$ZSH_CONFIG_DIR/zsh-mgr/generic-auto-updater.zsh"
 
 #Sources a plugin to load it on the shell
 #$1: Plugin's author
@@ -46,7 +47,7 @@ add_plugin() {
     local -r PLUGIN_NAME=$(echo "$1" | cut -d "/" -f 2)
     local error=0 # By default, there are no errors
 
-    #Se comprueba si existe el directorio, indicando que se ha descargado
+    # Se comprueba si existe el directorio, indicando que se ha descargado
     if [ ! -d "$ZSH_PLUGIN_DIR/$PLUGIN_NAME" ]; then
         local -r raw_msg="Installing $PLUGIN_NAME"
         print_message "Installing $GREEN$PLUGIN_NAME$NO_COLOR" "$((COLUMNS - 4))" "$BRIGHT_CYAN#$NO_COLOR" "${#raw_msg}"
@@ -58,47 +59,43 @@ add_plugin() {
             git clone "$REPO_URL/$1" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
         fi
 
-        #Solo en caso de que haya tenido exito el clonado
+        # Solo en caso de que haya tenido exito el clonado
         if [ "$?" -eq 0 ]; then
-            #Se le añade una marca de tiempo para que cuando pase un tiempo determinado haga pull al plugin indicado
+            # Se le añade una marca de tiempo para que cuando pase un tiempo determinado haga pull al plugin indicado
             date +%s >"$ZSH_PLUGIN_DIR/.$PLUGIN_NAME"
         else
             error=1
             echo -e "${RED}Error installing $PLUGIN_NAME${NO_COLOR}"
-        fi
 
-    # En caso de haberse pasado esa marca de tiempo, se le hace un pull al plugin para obtener los cambios
-    elif [ $(($(date +%s) - $(cat "$ZSH_PLUGIN_DIR/.$PLUGIN_NAME"))) -ge $TIME_THRESHOLD ]; then
-        _update_plugin "$PLUGIN_NAME"
+            return 1
+        fi
     fi
+
+    _auto_update_plugin "$PLUGIN_NAME"
 
     if [ $error -eq 0 ]; then
         _source_plugin "$AUTHOR" "$PLUGIN_NAME"
     fi
 }
 
+
 # Updates a plugin given as input.
 # $1: The name of the plugin. It must be set before calling the function.
 # pre: The plugin must be installed or else the function will error out.
-_update_plugin() {
-    local -r raw_msg="Updating $1"
-    local error=0
+_update_plugin(){
+    local -r PLUGIN_NAME="$1"
+    _generic_updater "$PLUGIN_NAME" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"   
+}
 
-    print_message "Updating $GREEN$1$NO_COLOR" "$((COLUMNS - 4))" "$BRIGHT_CYAN#$NO_COLOR" "${#raw_msg}"
 
-    cd "$ZSH_PLUGIN_DIR/$1" || exit
-    git pull
+# Auto-updater for plugins.
+# 
+# $1: The name of the plugin.
+_auto_update_plugin(){
+    local -r PLUGIN_NAME="$1"
+    local -r REPO_LOC="$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
 
-    # We save the output code of the previous command
-    error="$?"
-
-    cd "$HOME" || exit # JUST IN CASE
-
-    if [ "$error" -eq 0 ]; then
-        date +%s >"$ZSH_PLUGIN_DIR/.$1"    
-    else
-        echo -e "${RED}Error updating $1${NO_COLOR}"
-    fi
+    _generic_auto_updater "$PLUGIN_NAME" "$REPO_LOC" "$TIME_THRESHOLD"
 }
 
 #\\033\[0;?[0-9]*m to find ansi escape codes
