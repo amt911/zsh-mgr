@@ -1,0 +1,6 @@
+# Colors
+
+RED='\033[0;31m'
+NO_COLOR='\033[0m'
+GREEN='\033[0;32m'
+BRIGHT_CYAN='\033[0;96m'

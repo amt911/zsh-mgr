@@ -13,9 +13,7 @@ readonly NO_COLOR='\033[0m'
 readonly GREEN='\033[0;32m'
 readonly BRIGHT_CYAN='\033[0;96m'
 
-readonly MGR_PATH="$( cd -- "$( dirname -- "${(%):-%x}" )" &> /dev/null && pwd )"
-
-source "$MGR_PATH/generic-auto-updater.sh"
+source "$ZSH_CONFIG_DIR/zsh-mgr/generic-auto-updater.sh"
 
 #Sources a plugin to load it on the shell
 #$1: Plugin's author
