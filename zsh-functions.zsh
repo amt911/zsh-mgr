@@ -1,5 +1,13 @@
 #!/bin/zsh
 
+if [ "$ZSH_FUNCTIONS_ZSH" != yes ]; then
+    ZSH_FUNCTIONS_ZSH=yes
+    echo "no sourceado"
+else
+    echo "sourceado"
+    return 0
+fi 
+
 # Prints a message given a max length. It fills the remaining space with "#"
 # $1: Message to be printed
 # $2: Max length of the message (including the message itself)

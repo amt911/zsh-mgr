@@ -1,5 +1,13 @@
 #!/bin/zsh
 
+if [ "$ZSH_MGR_ZSH" != yes ]; then
+    ZSH_MGR_ZSH=yes
+    echo "no sourceado"
+else
+    echo "sourceado"
+    return 0
+fi 
+
 export REPO_URL="https://github.com"
 
 # Time threshold
@@ -7,12 +15,8 @@ export TIME_THRESHOLD=604800    # 1 week in seconds
 export MGR_TIME_THRESHOLD=10    # 1 week in seconds
 # TIME_THRESHOLD=10 # 20 hours in seconds
 
-# Colors
-readonly RED='\033[0;31m'
-readonly NO_COLOR='\033[0m'
-readonly GREEN='\033[0;32m'
-readonly BRIGHT_CYAN='\033[0;96m'
 
+source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"
 source "$ZSH_CONFIG_DIR/zsh-mgr/generic-auto-updater.sh"
 
 #Sources a plugin to load it on the shell
@@ -141,7 +145,9 @@ check_plugins_update_date() {
         for i in "${LOADED_PLUGINS[@]}"
         do
             # It needs to be writable since it updates in every iteration
-            local NEXT_DATE=$(cat "$ZSH_PLUGIN_DIR"/."$i")
+            local NEXT_DATE
+            NEXT_DATE=$(cat "$ZSH_PLUGIN_DIR"/."$i")
+            
             echo -e "${BRIGHT_CYAN}$i:${NO_COLOR} $(date -d @$((NEXT_DATE+TIME_THRESHOLD)) "+%d-%m-%Y %H:%M:%S")"
         done    
 
