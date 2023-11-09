@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 
 if [ "$ZSH_MGR_ZSH" != yes ]; then
     ZSH_MGR_ZSH=yes
@@ -11,30 +11,41 @@ export REPO_URL="https://github.com"
 # Time threshold
 export TIME_THRESHOLD=604800        # 1 week in seconds
 export MGR_TIME_THRESHOLD=604800    # 1 week in seconds
-# TIME_THRESHOLD=10 # 20 hours in seconds
 
+PLUGIN_LIST=()  # Empty array for plugins
 
 source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"
 source "$ZSH_CONFIG_DIR/zsh-mgr/generic-auto-updater.zsh"
 
-#Sources a plugin to load it on the shell
-#$1: Plugin's author
-#$2: Plugin name
+# Sources a plugin to load it on the shell
+# $1: Plugin's author
+# $2: Plugin name
 _source_plugin() {
+    local directory
+
     if [ -f "$ZSH_PLUGIN_DIR/$2/$2.plugin.zsh" ]; then
-        source "$ZSH_PLUGIN_DIR/$2/$2.plugin.zsh"
+        directory="$ZSH_PLUGIN_DIR/$2/$2.plugin.zsh"
 
     elif [ -f "$ZSH_PLUGIN_DIR/$2/$2.zsh" ]; then
-        source "$ZSH_PLUGIN_DIR/$2/$2.zsh"
+        directory="$ZSH_PLUGIN_DIR/$2/$2.zsh"
 
-    #This one is for powerlevel10k
+    # This one is for powerlevel10k
     elif [ -f "$ZSH_PLUGIN_DIR/$2/$2.zsh-theme" ]; then
-        source "$ZSH_PLUGIN_DIR/$2/$2.zsh-theme"
+        directory="$ZSH_PLUGIN_DIR/$2/$2.zsh-theme"
 
     else
-        echo -e "${RED}Error adding plugin${NO_COLOR} $2"
+        echo -e "${RED}Error adding plugin $2:${NO_COLOR} Script not found"
         return 1
     fi
+
+    if ! source "$directory"; then
+        echo -e "${RED}Error adding plugin $2:${NO_COLOR} Unknown error"
+        return 1
+    fi
+
+
+    # Adds the sourced plugin to the plugin list
+    PLUGIN_LIST=("${PLUGIN_LIST[@]}" "$2")
 
     return 0
 }
@@ -45,7 +56,7 @@ _source_plugin() {
 add_plugin() {
     local -r AUTHOR=$(echo "$1" | cut -d "/" -f 1)
     local -r PLUGIN_NAME=$(echo "$1" | cut -d "/" -f 2)
-    local error=0 # By default, there are no errors
+    # local error=0 # By default, there are no errors
 
     # Se comprueba si existe el directorio, indicando que se ha descargado
     if [ ! -d "$ZSH_PLUGIN_DIR/$PLUGIN_NAME" ]; then
@@ -64,7 +75,7 @@ add_plugin() {
             # Se le añade una marca de tiempo para que cuando pase un tiempo determinado haga pull al plugin indicado
             date +%s >"$ZSH_PLUGIN_DIR/.$PLUGIN_NAME"
         else
-            error=1
+            # error=1
             echo -e "${RED}Error installing $PLUGIN_NAME${NO_COLOR}"
 
             return 1
@@ -72,10 +83,7 @@ add_plugin() {
     fi
 
     _auto_update_plugin "$PLUGIN_NAME"
-
-    if [ $error -eq 0 ]; then
-        _source_plugin "$AUTHOR" "$PLUGIN_NAME"
-    fi
+    _source_plugin "$AUTHOR" "$PLUGIN_NAME"
 }
 
 
@@ -100,26 +108,10 @@ _auto_update_plugin(){
 
 #\\033\[0;?[0-9]*m to find ansi escape codes
 
-# Lists all loaded plugins
-list_plugins() {
-    cd "$ZSH_PLUGIN_DIR" || exit
-    local -r res=$(find . -maxdepth 1 -type f -name ".*" | sed 's/^\.\/\.//')
-    cd "$HOME" || exit
-
-    echo "$res"
-}
-
-
 # Updates all loaded plugins
 update_plugins(){
-    # First we check if the output is empty
-    local -r PLUGINS_LIST=$(list_plugins)
-
-    if [ "$PLUGINS_LIST" != "" ]; then
-        # Then we insert them inside an array to iterate over them
-        local -r LOADED_PLUGINS=("${(@f)$(list_plugins)}")
-
-        for i in "${LOADED_PLUGINS[@]}"
+    if [ "${#PLUGIN_LIST[@]}" -ne "0" ]; then
+        for i in "${PLUGIN_LIST[@]}"
         do
             _update_plugin "$i"
         done    
@@ -133,18 +125,12 @@ update_plugins(){
 # date -d @1679524012 "+%d-%m-%Y %H:%M:%S"
 
 check_plugins_update_date() {
-    local -r PLUGINS_LIST=$(list_plugins)
-
-    if [ "$PLUGINS_LIST" != "" ]; then
-        # Then we insert them inside an array to iterate over them
-        local -r LOADED_PLUGINS=("${(@f)$(list_plugins)}")
-
-        for i in "${LOADED_PLUGINS[@]}"
+    local NEXT_DATE
+    if [ "${#PLUGIN_LIST[@]}" -ne "0" ]; then
+        for i in "${PLUGIN_LIST[@]}"
         do
             # It needs to be writable since it updates in every iteration
-            local NEXT_DATE
             NEXT_DATE=$(cat "$ZSH_PLUGIN_DIR"/."$i")
-            
             echo -e "${BRIGHT_CYAN}$i:${NO_COLOR} $(date -d @$((NEXT_DATE+TIME_THRESHOLD)) "+%d-%m-%Y %H:%M:%S")"
         done    
 
