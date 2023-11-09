@@ -1,16 +1,24 @@
 #!/bin/zsh
 
+if [ "$ZSH_MGR_ZSH" != yes ]; then
+    ZSH_MGR_ZSH=yes
+    echo "no sourceado"
+else
+    echo "sourceado"
+    return 0
+fi 
+
 export REPO_URL="https://github.com"
 
 # Time threshold
-export TIME_THRESHOLD=604800    # 1 week in seconds
+export TIME_THRESHOLD=604800        # 1 week in seconds
+export MGR_TIME_THRESHOLD=604800    # 1 week in seconds
 # TIME_THRESHOLD=10 # 20 hours in seconds
 
-# Colors
-readonly RED='\033[0;31m'
-readonly NO_COLOR='\033[0m'
-readonly GREEN='\033[0;32m'
-readonly BRIGHT_CYAN='\033[0;96m'
+
+source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"
+source "$ZSH_CONFIG_DIR/zsh-mgr/generic-auto-updater.sh"
+source "$ZSH_CONFIG_DIR/zsh-mgr/generic-auto-updater.zsh"
 
 #Sources a plugin to load it on the shell
 #$1: Plugin's author
@@ -22,13 +30,16 @@ _source_plugin() {
     elif [ -f "$ZSH_PLUGIN_DIR/$2/$2.zsh" ]; then
         source "$ZSH_PLUGIN_DIR/$2/$2.zsh"
 
-    #Este ultimo para powerlevel10k
+    #This one is for powerlevel10k
     elif [ -f "$ZSH_PLUGIN_DIR/$2/$2.zsh-theme" ]; then
         source "$ZSH_PLUGIN_DIR/$2/$2.zsh-theme"
 
     else
         echo -e "${RED}Error adding plugin${NO_COLOR} $2"
+        return 1
     fi
+
+    return 0
 }
 
 # Adds a plugin and updates it every week. Then it sources it.
@@ -39,7 +50,7 @@ add_plugin() {
     local -r PLUGIN_NAME=$(echo "$1" | cut -d "/" -f 2)
     local error=0 # By default, there are no errors
 
-    #Se comprueba si existe el directorio, indicando que se ha descargado
+    # Se comprueba si existe el directorio, indicando que se ha descargado
     if [ ! -d "$ZSH_PLUGIN_DIR/$PLUGIN_NAME" ]; then
         local -r raw_msg="Installing $PLUGIN_NAME"
         print_message "Installing $GREEN$PLUGIN_NAME$NO_COLOR" "$((COLUMNS - 4))" "$BRIGHT_CYAN#$NO_COLOR" "${#raw_msg}"
@@ -51,80 +62,46 @@ add_plugin() {
             git clone "$REPO_URL/$1" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
         fi
 
-        #Solo en caso de que haya tenido exito el clonado
+        # Solo en caso de que haya tenido exito el clonado
         if [ "$?" -eq 0 ]; then
-            #Se le añade una marca de tiempo para que cuando pase un tiempo determinado haga pull al plugin indicado
+            # Se le añade una marca de tiempo para que cuando pase un tiempo determinado haga pull al plugin indicado
             date +%s >"$ZSH_PLUGIN_DIR/.$PLUGIN_NAME"
         else
             error=1
             echo -e "${RED}Error installing $PLUGIN_NAME${NO_COLOR}"
-        fi
 
-    # En caso de haberse pasado esa marca de tiempo, se le hace un pull al plugin para obtener los cambios
-    elif [ $(($(date +%s) - $(cat "$ZSH_PLUGIN_DIR/.$PLUGIN_NAME"))) -ge $TIME_THRESHOLD ]; then
-        _update_plugin "$PLUGIN_NAME"
+            return 1
+        fi
     fi
+
+    _auto_update_plugin "$PLUGIN_NAME"
 
     if [ $error -eq 0 ]; then
         _source_plugin "$AUTHOR" "$PLUGIN_NAME"
     fi
 }
 
+
 # Updates a plugin given as input.
 # $1: The name of the plugin. It must be set before calling the function.
 # pre: The plugin must be installed or else the function will error out.
-_update_plugin() {
-    local -r raw_msg="Updating $1"
-    local error=0
+_update_plugin(){
+    local -r PLUGIN_NAME="$1"
+    _generic_updater "$PLUGIN_NAME" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"   
+}
 
-    print_message "Updating $GREEN$1$NO_COLOR" "$((COLUMNS - 4))" "$BRIGHT_CYAN#$NO_COLOR" "${#raw_msg}"
 
-    cd "$ZSH_PLUGIN_DIR/$1" || exit
-    git pull
+# Auto-updater for plugins.
+# 
+# $1: The name of the plugin.
+_auto_update_plugin(){
+    local -r PLUGIN_NAME="$1"
+    local -r REPO_LOC="$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
 
-    # We save the output code of the previous command
-    error="$?"
-
-    cd "$HOME" || exit # JUST IN CASE
-
-    if [ "$error" -eq 0 ]; then
-        date +%s >"$ZSH_PLUGIN_DIR/.$1"    
-    else
-        echo -e "${RED}Error updating $1${NO_COLOR}"
-    fi
+    _generic_auto_updater "$PLUGIN_NAME" "$REPO_LOC" "$TIME_THRESHOLD"
 }
 
 #\\033\[0;?[0-9]*m to find ansi escape codes
-
-# Prints a message given a max length. It fills the remaining space with "#"
-# $1: Message to be printed
-# $2: Max length of the message (including the message itself)
-# $3: Character to fill the remaining space. It can be colored
-# $4 (optional): Message length. Useful when it has ANSI escape codes, since it detects them as characters.
-print_message() {
-    local MSG_LENGTH=${#1}
-
-    [ $# -eq 4 ] && MSG_LENGTH="$4"
-
-    local -r MAX_LENGTH="$2"
-    local -r HASHTAG_NRO=$(((MAX_LENGTH - MSG_LENGTH - 2) / 2))
-    
-    printf "\n"
-    printf "%0.s$3" $(seq 1 "$2")
-    printf "\n"
-    printf "%0.s$3" $(seq 1 "$HASHTAG_NRO")
-
-    if [ $((MSG_LENGTH % 2)) -ne 0 ]; then
-        printf " %b  " "$1"
-    else
-        printf " %b " "$1"
-    fi
-
-    printf "%0.s$3" $(seq 1 "$HASHTAG_NRO")
-    printf "\n"
-    printf "%0.s$3" $(seq 1 "$2")
-    printf "\n"    
-}
 
 # Lists all loaded plugins
 list_plugins() {
@@ -168,7 +145,9 @@ check_plugins_update_date() {
         for i in "${LOADED_PLUGINS[@]}"
         do
             # It needs to be writable since it updates in every iteration
-            local NEXT_DATE=$(cat "$ZSH_PLUGIN_DIR"/."$i")
+            local NEXT_DATE
+            NEXT_DATE=$(cat "$ZSH_PLUGIN_DIR"/."$i")
+            
             echo -e "${BRIGHT_CYAN}$i:${NO_COLOR} $(date -d @$((NEXT_DATE+TIME_THRESHOLD)) "+%d-%m-%Y %H:%M:%S")"
         done    
 
@@ -176,3 +155,16 @@ check_plugins_update_date() {
         echo -e "${RED}No plugins loaded/installed${NO_COLOR}"
     fi
 }
+
+# Manually updates the plugin manager
+update_mgr(){
+    _generic_updater "zsh-mgr" "$ZSH_CONFIG_DIR/zsh-mgr"
+}
+
+# Auto-updater for the plugin manager
+_auto_update_mgr(){
+    _generic_auto_updater "zsh-mgr" "$ZSH_CONFIG_DIR/zsh-mgr" "$MGR_TIME_THRESHOLD"
+}
+
+# Calls the auto-updater for the plugin manager
+_auto_update_mgr

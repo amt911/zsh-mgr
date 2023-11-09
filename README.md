@@ -33,6 +33,8 @@ export ZSH_PLUGIN_DIR="your/desired/location"
 source parent/folder/from/repo/zsh-mgr/zsh-mgr.zsh
 ```
 
+**IMPORTANT:** If you want to use the tilde ("~"), DON'T put it between double quotes, otherwise the scripts will fail.
+
 ## Configuration
 
 ### Adding plugins

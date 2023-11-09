@@ -1,23 +1,14 @@
 #!/bin/zsh
 
 # DEBUG FOR PAK USER: mkdir -p .config/zsh && sudo cp -r /home/andres/zsh-mgr .config/zsh && sudo chown -R pak:pak .config/zsh/zsh-mgr; touch .zshrc && chmod +x .zshrc && sudo cp -r ~andres/.ssh . && sudo chown -R pak:pak .ssh
-# Colors
-readonly RED='\033[0;31m'
-readonly NO_COLOR='\033[0m'
-readonly GREEN='\033[0;32m'
-readonly BRIGHT_CYAN='\033[0;96m'
 
 # Default plugin manager locations
 ZSH_PLUGIN_DIR="$HOME/.zsh-plugins"
-ZSH_CONFIG_DIR="$HOME/.config/zsh"
+readonly ZSH_CONFIG_DIR="$HOME/.config/zsh"
 
-# Expands possibles aliases to home
-# $1: Path
-# return: Returns an expanded string
-
-_expand_home() {
-    echo "${1//(\~|\$HOME)/"$HOME"}"    
-}
+# Source neccesary functions and exports
+source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"
+source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-functions.zsh"
 
 _interactive_install() {
     local plugin_dir
@@ -27,7 +18,7 @@ _interactive_install() {
     read -r plugin_dir
 
     # Expands home variables
-    plugin_dir=$(_expand_home "$plugin_dir")
+    plugin_dir=$(_sanitize_location "$plugin_dir")
 
     if [ "$plugin_dir" != "" ]; then
         ZSH_PLUGIN_DIR="$plugin_dir"
