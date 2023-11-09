@@ -13,7 +13,6 @@ fi
 # $4 (optional): Message length. Useful when it has ANSI escape codes, since it detects them as characters.
 print_message() {
     local MSG_LENGTH=${#1}
-    echo "tengo $# parametros"
 
     [ $# -eq 4 ] && MSG_LENGTH="$4"
 
