@@ -4,9 +4,7 @@
 
 if [ "$GENERIC_AUTO_UPDATER_ZSH" != yes ]; then
     GENERIC_AUTO_UPDATER_ZSH=yes
-    echo "no sourceado"
 else
-    echo "sourceado"
     return 0
 fi 
 
@@ -70,10 +68,10 @@ _generic_updater(){
     # Setting the timestamp file location
     if [ "$#" -eq "3" ];then
         TIMESTAMP_LOC=$(_sanitize_location "$3")
-        echo "Using arg $TIMESTAMP_LOC"
+        # echo "Using arg $TIMESTAMP_LOC"
     else
         TIMESTAMP_LOC=$(_sanitize_location "$ZSH_PLUGIN_DIR")
-        echo "Using env var $TIMESTAMP_LOC"
+        # echo "Using env var $TIMESTAMP_LOC"
     fi
 
     print_message "$MSG" "$((COLUMNS - 4))" "$BRIGHT_CYAN#$NO_COLOR" "${#RAW_MSG}"
@@ -94,7 +92,7 @@ _generic_updater(){
     # Creates the path to the timestamp file
     local -r DATE_FN=$(_from_repo_to_time_file "$LOCATION" "$TIMESTAMP_LOC")    
     
-    echo "$DATE_FN"
+    # echo "$DATE_FN"
 
     # Adds a timestamp
     date +%s > "$DATE_FN"
@@ -129,17 +127,17 @@ _generic_auto_updater(){
     # Setting the timestamp file location
     if [ "$#" -eq "4" ];then
         TIMESTAMP_LOC=$(_sanitize_location "$4")
-        echo "Using arg $TIMESTAMP_LOC"
+        # echo "Using arg $TIMESTAMP_LOC"
     else
         TIMESTAMP_LOC=$(_sanitize_location "$ZSH_PLUGIN_DIR")
-        echo "Using env var $TIMESTAMP_LOC"
+        # echo "Using env var $TIMESTAMP_LOC"
     fi    
 
 
     local -r DATE_FN=$(_from_repo_to_time_file "$LOCATION" "$TIMESTAMP_LOC")
 
     if [ ! -f "$DATE_FN" ] || [ $(($(date +%s) - $(cat "$DATE_FN"))) -ge "$TIME_THRESHOLD" ]; then
-        echo "Tengo que actualizar"
+        # echo "Tengo que actualizar"
         _generic_updater "$1" "$LOCATION" "$TIME_THRESHOLD" "$TIMESTAMP_LOC"
     fi  
 }

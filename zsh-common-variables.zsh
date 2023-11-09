@@ -2,9 +2,7 @@
 
 if [ "$ZSH_COMMON_VARIABLES" != yes ]; then
     ZSH_COMMON_VARIABLES=yes
-    echo "no sourceado"
 else
-    echo "sourceado"
     return 0
 fi 
 
