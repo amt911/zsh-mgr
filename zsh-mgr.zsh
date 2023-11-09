@@ -30,13 +30,16 @@ _source_plugin() {
     elif [ -f "$ZSH_PLUGIN_DIR/$2/$2.zsh" ]; then
         source "$ZSH_PLUGIN_DIR/$2/$2.zsh"
 
-    #Este ultimo para powerlevel10k
+    #This one is for powerlevel10k
     elif [ -f "$ZSH_PLUGIN_DIR/$2/$2.zsh-theme" ]; then
         source "$ZSH_PLUGIN_DIR/$2/$2.zsh-theme"
 
     else
         echo -e "${RED}Error adding plugin${NO_COLOR} $2"
+        return 1
     fi
+
+    return 0
 }
 
 # Adds a plugin and updates it every week. Then it sources it.
@@ -153,4 +156,15 @@ check_plugins_update_date() {
     fi
 }
 
-# _auto_updater_mgr
+# Manually updates the plugin manager
+update_mgr(){
+    _generic_updater "zsh-mgr" "$ZSH_CONFIG_DIR/zsh-mgr"
+}
+
+# Auto-updater for the plugin manager
+_auto_update_mgr(){
+    _generic_auto_updater "zsh-mgr" "$ZSH_CONFIG_DIR/zsh-mgr" "$MGR_TIME_THRESHOLD"
+}
+
+# Calls the auto-updater for the plugin manager
+_auto_update_mgr
