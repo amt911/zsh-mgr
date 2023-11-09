@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 if [ "$ZSH_MGR_ZSH" != yes ]; then
     ZSH_MGR_ZSH=yes
@@ -16,6 +16,7 @@ PLUGIN_LIST=()  # Empty array for plugins
 
 source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"
 source "$ZSH_CONFIG_DIR/zsh-mgr/generic-auto-updater.zsh"
+source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-functions.zsh"
 
 # Sources a plugin to load it on the shell
 # $1: Plugin's author
@@ -125,8 +126,8 @@ update_plugins(){
 # date -d @1679524012 "+%d-%m-%Y %H:%M:%S"
 
 check_plugins_update_date() {
-    local NEXT_DATE
     if [ "${#PLUGIN_LIST[@]}" -ne "0" ]; then
+        local NEXT_DATE
         for i in "${PLUGIN_LIST[@]}"
         do
             # It needs to be writable since it updates in every iteration
@@ -136,6 +137,19 @@ check_plugins_update_date() {
 
     else
         echo -e "${RED}No plugins loaded/installed${NO_COLOR}"
+    fi
+}
+
+
+# Maps every plugin to its update date.
+_plugin_update_to_json(){
+    if [ "${#PLUGIN_LIST[@]}" -ne "0" ]; then
+        # Unique to zsh
+        for i in "${PLUGIN_LIST[@]}"
+        do
+            # plugin_map["$i"]=$(cat "$ZSH_PLUGIN_DIR"/."$i")
+            echo "$i:$(cat "$ZSH_PLUGIN_DIR"/."$i")"
+        done
     fi
 }
 
