@@ -11,8 +11,8 @@ fi
 export REPO_URL="https://github.com"
 
 # Time threshold
-export TIME_THRESHOLD=604800    # 1 week in seconds
-export MGR_TIME_THRESHOLD=10    # 1 week in seconds
+export TIME_THRESHOLD=604800        # 1 week in seconds
+export MGR_TIME_THRESHOLD=604800    # 1 week in seconds
 # TIME_THRESHOLD=10 # 20 hours in seconds
 
 
