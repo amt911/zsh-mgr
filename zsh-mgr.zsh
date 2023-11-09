@@ -17,7 +17,6 @@ export MGR_TIME_THRESHOLD=604800    # 1 week in seconds
 
 
 source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"
-source "$ZSH_CONFIG_DIR/zsh-mgr/generic-auto-updater.sh"
 source "$ZSH_CONFIG_DIR/zsh-mgr/generic-auto-updater.zsh"
 
 #Sources a plugin to load it on the shell
