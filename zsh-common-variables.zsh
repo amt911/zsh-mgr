@@ -1,3 +1,5 @@
+#!/bin/zsh
+
 # Colors
 
 if [ "$ZSH_COMMON_VARIABLES" != yes ]; then
@@ -9,4 +11,15 @@ fi
 readonly RED='\033[0;31m'
 readonly NO_COLOR='\033[0m'
 readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[0;33m'
 readonly BRIGHT_CYAN='\033[0;96m'
+readonly CYAN='\033[0;36m'
+
+# echo "${GRAY}hola${NO_COLOR}"
+
+_print_colors(){
+    for i in {1..255}
+    do
+        echo -e "\033[0;${i}m$i$NO_COLOR"
+    done
+}
