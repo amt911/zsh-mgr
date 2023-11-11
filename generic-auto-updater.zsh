@@ -150,7 +150,7 @@ _generic_auto_updater(){
 # lejos: verde, mediano: amarillo, cerca: rojo
 # date -d @1679524012 "+%d-%m-%Y %H:%M:%S"
 # date +%s
-# _color_row_on_date "hola:adiois:prueba:1699696478" ":" "100"
+# _color_row_on_date "hola#adiois#prueba#1699696478" "#" "100"
 _color_row_on_date(){
     local -r ROW="$1"
     local -r DELIM="$2"
@@ -180,7 +180,7 @@ _color_row_on_date(){
         # echo "Ya debería actualizar -> $DATE_DIFF -> $THRESHOLD"
     fi
 
-    local -r OUTPUT_ROW=$(_color_row "$ROW" "$DELIM" "$color_res")
+    local -r OUTPUT_ROW=$(_color_row "$(_change_column_entry "$ROW" "$COL_NUM" "$(date -d @"$DATE_ROW" "+%d-%m-%Y %H:%M:%S")" "$DELIM")" "$DELIM" "$color_res")
 
     echo "$OUTPUT_ROW"
 }

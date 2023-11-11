@@ -116,6 +116,8 @@ _get_column_text_at(){
 # 
 # $2: Delimiter for columns.
 # 
+# $3 (Optional): Number to be added to final result.
+# 
 # return: The maximum character length of every column. Using the same delimiter.
 # 
 # Output example fro 3 columns: 1:2:3
@@ -135,6 +137,9 @@ _max_char_table(){
     local res=""
     local entry
     local entry_len
+    local extra="0"
+
+    [ "$#" -eq "3" ] && extra="$3"
 
     # echo -e "${TABLE[1]}\nY su tamaño es: $FIL\nY el otro es: $COL"
 
@@ -151,7 +156,9 @@ _max_char_table(){
             [ "$entry_len" -gt "$max" ] && max="$entry_len"
         done
 
-        if [ "$j" -eq $COL ]; then
+        max=$((max+extra))
+
+        if [ "$j" -eq "$COL" ]; then
             res+="$max"
         else
             res+="$max$DELIM"
@@ -193,7 +200,46 @@ _color_row(){
     echo -e "$res"
 }
 
+# Changes column entry to specified string.
+# 
+# $1: Row to be changed.
+# 
+# $2: Column position.
+# 
+# $3: New string.
+# 
+# $4: Delimiter.
+_change_column_entry(){
+    local -r ROW="$1"
+    local -r COL_POS="$2"
+    local -r NEW_STR="$3"
+    local -r DELIM="$4"
+    local -r COL_NUM=$(_get_column_length "$ROW" "$DELIM")
+    local res
 
+    if [ "$COL_POS" -gt "$COL_NUM" ];
+    then
+        echo "$ROW"
+        return 0
+    fi
+
+    for i in {1..$COL_NUM}
+    do
+        if [ "$i" -eq "$COL_POS" ];
+        then
+            res+="$NEW_STR"
+        else
+            res+=$(_get_column_text_at "$ROW" "$i" "$DELIM")
+        fi
+
+        if [ "$i" -ne "$COL_NUM" ];
+        then
+            res+="$DELIM"
+        fi
+    done
+
+    echo "$res"
+}
 
 # Creates a table with the array passed as input. It can be colored.
 # 
@@ -202,11 +248,43 @@ _color_row(){
 # 
 # $2: Delimiter
 # 
-# $3: Same array as $1, but colored. It only needs to be used when you want color in the output.
+# $3 (Optional): Same array as $1, but colored. It only needs to be used when you want color in the output.
 # 
-# lejos: cyan, mediano: verde, cerca: rojo
-# date -d @1679524012 "+%d-%m-%Y %H:%M:%S"
-# date +%s
-# _create_table(){
+# _create_table "hola:queso:adios" ":"
+_create_table(){
+    local -r RAW_TABLE="$1"
+    local -r DELIM="$2"
+    local -r MAX_CHAR_COL=$(_max_char_table "$RAW_TABLE" "$DELIM" "2")
+    local -r COL_NUM=$(_get_column_length "$RAW_TABLE" "$DELIM")
 
-# }
+    if [ "$#" -eq "3" ];
+    then
+        local -r TABLE="$3"
+    else
+        local -r TABLE="$RAW_TABLE"
+    fi
+
+    # Top of table
+    printf "┌"
+
+    for i in {1..$COL_NUM}
+    do
+        printf "%0.s─" $(seq 1 $(_get_column_text_at "$MAX_CHAR_COL" "$i" "$DELIM"))
+
+        [ "$COL_NUM" -gt "1" ] && [ "$i" -lt "$COL_NUM" ] && printf "┬"
+    done
+    printf "┐\n"
+
+    # Content of table
+
+    # Bottom of table
+    printf "└"
+
+    for i in {1..$COL_NUM}
+    do
+        printf "%0.s─" $(seq 1 $(_get_column_text_at "$MAX_CHAR_COL" "$i" "$DELIM"))
+
+        [ "$COL_NUM" -gt "1" ] && [ "$i" -lt "$COL_NUM" ] && printf "┴"
+    done
+    printf "┘\n"
+}
