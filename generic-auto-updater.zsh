@@ -141,3 +141,46 @@ _generic_auto_updater(){
         _generic_updater "$1" "$LOCATION" "$TIME_THRESHOLD" "$TIMESTAMP_LOC"
     fi  
 }
+
+
+# $1: Row. The date must be on the last column and in seconds since epoch.
+# $2: Delimiter.
+# $3: Time threshold.
+# 
+# lejos: verde, mediano: amarillo, cerca: rojo
+# date -d @1679524012 "+%d-%m-%Y %H:%M:%S"
+# date +%s
+# _color_row_on_date "hola:adiois:prueba:1699696478" ":" "100"
+_color_row_on_date(){
+    local -r ROW="$1"
+    local -r DELIM="$2"
+    local -r THRESHOLD="$3"
+    local -r DATE_TODAY=$(date +%s)
+    local -r COL_NUM=$(_get_column_length "$ROW" "$DELIM")
+    local -r DATE_ROW=$(_get_column_text_at "$ROW" "$COL_NUM" "$DELIM")
+    local -r DATE_DIFF=$(( DATE_TODAY - DATE_ROW ))
+    local color_res
+
+    # echo "$ROW / $DELIM / $THRESHOLD / $DATE_TODAY / $COL_NUM / $DATE_ROW / $DATE_DIFF"
+
+    # if [ "$DATE_DIFF" -lt $(( 0.25 * THRESHOLD )) ];
+    if (( $(echo "$DATE_DIFF < $(echo "0.25*$THRESHOLD" | bc -l)" | bc -l) ));
+    then
+        color_res="$RED"    
+        # echo "$DATE_DIFF < $(echo "0.25*$THRESHOLD" | bc -l)" | bc -l
+        # echo "Es menos del 25% -> $DATE_DIFF -> $(echo "0.25*$THRESHOLD" | bc -l)"
+    
+    elif (( $(echo "$DATE_DIFF < $(echo "0.75*$THRESHOLD" | bc -l)" | bc -l) ));
+    then
+        color_res="$YELLOW"
+        # echo "$DATE_DIFF < $(echo "0.75*$THRESHOLD" | bc -l)" | bc -l
+        # echo "Es menos del 75% -> $DATE_DIFF -> $(echo "0.75*$THRESHOLD" | bc -l)"
+    else
+        color_res="$GREEN"
+        # echo "Ya debería actualizar -> $DATE_DIFF -> $THRESHOLD"
+    fi
+
+    local -r OUTPUT_ROW=$(_color_row "$ROW" "$DELIM" "$color_res")
+
+    echo "$OUTPUT_ROW"
+}

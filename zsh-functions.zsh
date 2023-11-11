@@ -136,7 +136,7 @@ _max_char_table(){
     local entry
     local entry_len
 
-    echo -e "${TABLE[1]}\nY su tamaño es: $FIL\nY el otro es: $COL"
+    # echo -e "${TABLE[1]}\nY su tamaño es: $FIL\nY el otro es: $COL"
 
     # {1..$FIL}: Only works in zsh 
     for j in {1..$COL}
@@ -195,12 +195,18 @@ _color_row(){
 
 
 
-# Colors a row with a date as its last column. The date must be in seconds since epoch.
-# The nearest date is panted in orange, while the furthest in gray.
+# Creates a table with the array passed as input. It can be colored.
 # 
-# $1: String to be colored.
+# $1: Array with every entry separated by a delimiter. 
+# Example: (hello:hola:bonjour bye:adios:aurevoir)
 # 
-# $2: Delimiter used.
+# $2: Delimiter
+# 
+# $3: Same array as $1, but colored. It only needs to be used when you want color in the output.
+# 
 # lejos: cyan, mediano: verde, cerca: rojo
 # date -d @1679524012 "+%d-%m-%Y %H:%M:%S"
 # date +%s
+# _create_table(){
+
+# }
