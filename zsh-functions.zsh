@@ -243,7 +243,7 @@ _change_column_entry(){
 
 # Creates a table with the array passed as input. It can be colored.
 # 
-# $1: Array with every entry separated by a delimiter. 
+# $1: Array with every entry separated by a delimiter and newlines. 
 # Example: (hello:hola:bonjour bye:adios:aurevoir)
 # 
 # $2: Delimiter
@@ -251,17 +251,25 @@ _change_column_entry(){
 # $3 (Optional): Same array as $1, but colored. It only needs to be used when you want color in the output.
 # 
 # _create_table "hola:queso:adios" ":"
+# _create_table "hola:queso:adios\nhola:bola:cola" ":"
+# _create_table "hola:queso:adios\nhola:bola:colaxddasdasdd" ":"
 _create_table(){
-    local -r RAW_TABLE="$1"
+    local -r RAW_TABLE=("${(@f)$(echo "$1")}")
     local -r DELIM="$2"
-    local -r MAX_CHAR_COL=$(_max_char_table "$RAW_TABLE" "$DELIM" "2")
-    local -r COL_NUM=$(_get_column_length "$RAW_TABLE" "$DELIM")
+    local -r MAX_CHAR_COL=$(_max_char_table "$1" "$DELIM" "2")
+    local -r COL_NUM=$(_get_column_length "${RAW_TABLE[1]}" "$DELIM")
+
+    if [ "${#RAW_TABLE[@]}" -eq "0" ];
+    then
+        echo "${RED}No array found${NO_COLOR}"
+        return 1
+    fi
 
     if [ "$#" -eq "3" ];
     then
-        local -r TABLE="$3"
+        local -r TABLE=("${(@f)$(echo "$3")}")
     else
-        local -r TABLE="$RAW_TABLE"
+        local -r TABLE=("${RAW_TABLE[@]}")
     fi
 
     # Top of table
@@ -269,20 +277,71 @@ _create_table(){
 
     for i in {1..$COL_NUM}
     do
-        printf "%0.s─" $(seq 1 $(_get_column_text_at "$MAX_CHAR_COL" "$i" "$DELIM"))
+        printf "%0.s─" $(seq 1 "$(_get_column_text_at "$MAX_CHAR_COL" "$i" "$DELIM")")
 
         [ "$COL_NUM" -gt "1" ] && [ "$i" -lt "$COL_NUM" ] && printf "┬"
     done
     printf "┐\n"
 
     # Content of table
+    local spaces="0"
+    local max_length="0"
+    local msg_length="0"
+    local -r SPACE_CHAR=" "
+
+    for i in {1..${#TABLE[@]}}
+    do
+        printf "│"
+        for j in {1..$COL_NUM}
+        do
+            # Max character length of this column
+            max_length=$(_get_column_text_at "$MAX_CHAR_COL" "$j" "$DELIM" )
+
+            # Message length for this cell
+            msg_length=$(_get_column_text_at "${RAW_TABLE[$i]}" "$j" "$DELIM")
+
+            msg_length=${#msg_length}
+
+            # Number of spaces needed
+            spaces=$(( ( max_length - msg_length) / 2 ))
+
+
+            printf "%0.s$SPACE_CHAR" $(seq 1 $spaces)
+            
+            printf "%b" "$(_get_column_text_at "${TABLE[$i]}" "$j" "$DELIM")"
+
+            # If there was a remainder, we add 1 to the number of spaces
+            (( (( max_length - msg_length) % 2) != 0 )) && spaces=$(( spaces + 1 ))
+
+            printf "%0.s$SPACE_CHAR" $(seq 1 $spaces)
+
+            printf "│"
+        done
+
+        # Print the middle line
+        printf "\n"
+
+        if [ "$i" -lt "${#TABLE[@]}" ];
+        then
+            printf "├"
+
+            for i in {1..$COL_NUM}
+            do
+                printf "%0.s─" $(seq 1 "$(_get_column_text_at "$MAX_CHAR_COL" "$i" "$DELIM")")
+
+                [ "$COL_NUM" -gt "1" ] && [ "$i" -lt "$COL_NUM" ] && printf "┼"
+            done
+            printf "┤\n"    
+        fi
+    done
+
 
     # Bottom of table
     printf "└"
 
     for i in {1..$COL_NUM}
     do
-        printf "%0.s─" $(seq 1 $(_get_column_text_at "$MAX_CHAR_COL" "$i" "$DELIM"))
+        printf "%0.s─" $(seq 1 "$(_get_column_text_at "$MAX_CHAR_COL" "$i" "$DELIM")")
 
         [ "$COL_NUM" -gt "1" ] && [ "$i" -lt "$COL_NUM" ] && printf "┴"
     done

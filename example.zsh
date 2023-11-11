@@ -46,7 +46,7 @@ echo "│     Columna1    │     Columna2    │"
 imprimir_fila2 "Valor1          │          Valor2"
 imprimir_fila2 "Valor3          │          Valor4"
 imprimir_fila2 "Valor5          │          Valor6"
-echo "└─────────────────┴─────────────────┘"
+echo "└─────────────────┴─────────────────"
 
 # ┌─┬┐  ╔═╦╗  ╓─╥╖  ╒═╤╕
 # │ ││  ║ ║║  ║ ║║  │ ││
