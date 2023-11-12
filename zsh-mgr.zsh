@@ -16,7 +16,7 @@ PLUGIN_LIST=()  # Empty array for plugins
 
 source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"
 source "$ZSH_CONFIG_DIR/zsh-mgr/generic-auto-updater.zsh"
-source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-functions.zsh"
+source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-mgr-common-functions.zsh"
 
 # Sources a plugin to load it on the shell
 # $1: Plugin's author
@@ -125,17 +125,8 @@ update_plugins(){
 
 # date -d @1679524012 "+%d-%m-%Y %H:%M:%S"
 
-# $1: 
-_display_color_legend(){
-    local -r RAW_MSG="RED#Less than 25% left to update.\nYELLOW#Less than 75%, but more than 25% left to update.\nGREEN#Less than 100%, but more than 75% left to update."
-    local -r COLORED_MSG="${RED}RED${NO_COLOR}#Less than 25% left to update.\n${YELLOW}YELLOW${NO_COLOR}#Less than 75%, but more than 25% left to update.\n${GREEN}GREEN${NO_COLOR}#Less than 100%, but more than 75% left to update."
-
-    _create_table "$RAW_MSG" "#" "" "$COLORED_MSG"
-}
-
 # $1 (Optional yes/no): Output legend? Default: yes
 check_plugins_update_date() {
-    echo "${1-foo}"
     if [ "${#PLUGIN_LIST[@]}" -ne "0" ]; then  
         local RAW_TABLE=("${(@f)$(_plugin_update_to_table no)}")
         local COLORED_TABLE=("${(@f)$(_plugin_update_to_table yes)}")
@@ -157,14 +148,16 @@ check_plugins_update_date() {
 # Displays a colored table with the next update date for the plugin manager.
 # $1 (Optional yes/no): Display legend? Default: yes
 check_mgr_update_date(){
-    local raw_msg="zsh-mgr#$(date -d @"$(( $(cat "$ZSH_PLUGIN_DIR"/.zsh-mgr) + MGR_TIME_THRESHOLD ))" "+%d-%m-%Y %H:%M:%S" )"
-    local colored_msg=$(_color_row_on_date "zsh-mgr#$(cat "$ZSH_PLUGIN_DIR"/.zsh-mgr)" "#" "$MGR_TIME_THRESHOLD")
+    # local raw_msg="zsh-mgr#$(date -d @"$(( $(cat "$ZSH_PLUGIN_DIR"/.zsh-mgr) + MGR_TIME_THRESHOLD ))" "+%d-%m-%Y %H:%M:%S" )"
+    # local colored_msg=$(_color_row_on_date "zsh-mgr#$(cat "$ZSH_PLUGIN_DIR"/.zsh-mgr)" "#" "$MGR_TIME_THRESHOLD")
 
-    _create_table "Manager#Next update\n$raw_msg" "#" "${GREEN}" "Manager#Next update\n$colored_msg"
+    # _create_table "Manager#Next update\n$raw_msg" "#" "${GREEN}" "Manager#Next update\n$colored_msg"
 
-    [ "${1:-yes}" = "yes" ] && _display_color_legend 
+    # [ "${1:-yes}" = "yes" ] && _display_color_legend 
 
-    return 0
+    # return 0
+
+    _check_comp_update_date "zsh-mgr" "$ZSH_CONFIG_DIR/zsh-mgr" "$MGR_TIME_THRESHOLD" "Manager#Next update" "${GREEN}" "${1:-yes}"
 }
 
 # Displays a colored table with the next update date for the plugins and the plugin manager itself.

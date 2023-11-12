@@ -9,7 +9,7 @@ else
 fi 
 
 source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"
-source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-functions.zsh"
+source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-mgr-common-functions.zsh"
 
 # Converts the repo folder input to the timestamp file.
 # 
@@ -188,4 +188,40 @@ _color_row_on_date(){
     local -r OUTPUT_ROW=$(_color_row "$(_change_column_entry "$ROW" "$COL_NUM" "$(date -d @"$NEXT_DATE" "+%d-%m-%Y %H:%M:%S")" "$DELIM")" "$DELIM" "$color_res")
 
     echo "$OUTPUT_ROW"
+}
+
+# $1: 
+_display_color_legend(){
+    local -r RAW_MSG="RED#Less than 25% left to update.\nYELLOW#Less than 75%, but more than 25% left to update.\nGREEN#Less than 100%, but more than 75% left to update."
+    local -r COLORED_MSG="${RED}RED${NO_COLOR}#Less than 25% left to update.\n${YELLOW}YELLOW${NO_COLOR}#Less than 75%, but more than 25% left to update.\n${GREEN}GREEN${NO_COLOR}#Less than 100%, but more than 75% left to update."
+
+    _create_table "$RAW_MSG" "#" "" "$COLORED_MSG"
+}
+
+# $1: Component name to be printed.
+# $2: Repository location.
+# $3: Time threshold.
+# $4: First row name separated by "#". Example: Hello#Bye Bye
+# $5 (Optional): Table color. Leave empty string for no color.
+# $6 (Optional yes/no): Display color legend? Default: yes
+# $7 (Optional): Timestamp file location. If not set it will use $ZSH_PLUGIN_DIR.
+_check_comp_update_date(){
+    local -r COMP_NAME="$1"
+    local -r REPO_LOC="$2"
+    local -r THRESHOLD="$3"
+    local -r FIRST_ROW="$4"
+    local -r TABLE_COLOR="${5:-""}"
+    local -r LEGEND="${6:-yes}"
+    local -r TST_DIR="${7:-$ZSH_PLUGIN_DIR}"
+    local -r TST_FILE_LOC="$(_from_repo_to_time_file "$REPO_LOC" "$TST_DIR")"
+
+
+    local raw_msg="$COMP_NAME#$(date -d @"$(( $(cat "$TST_FILE_LOC") + THRESHOLD ))" "+%d-%m-%Y %H:%M:%S" )"
+    local colored_msg=$(_color_row_on_date "$COMP_NAME#$(cat "$TST_FILE_LOC")" "#" "$THRESHOLD")
+
+    _create_table "$FIRST_ROW\n$raw_msg" "#" "$TABLE_COLOR" "$FIRST_ROW\n$colored_msg"
+
+    [ "$LEGEND" = "yes" ] && _display_color_legend 
+
+    return 0    
 }
