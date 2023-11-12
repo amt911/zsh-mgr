@@ -133,7 +133,7 @@ _display_color_legend(){
     _create_table "$RAW_MSG" "#" "" "$COLORED_MSG"
 }
 
-# $1 (Optional yes/no): Output legend? 
+# $1 (Optional yes/no): Output legend? Default: yes
 check_plugins_update_date() {
     echo "${1-foo}"
     if [ "${#PLUGIN_LIST[@]}" -ne "0" ]; then  
@@ -146,29 +146,34 @@ check_plugins_update_date() {
         RAW_TABLE=$(printf "%s\n" "${RAW_TABLE[@]}")
         COLORED_TABLE=$(printf "%s\n" "${COLORED_TABLE[@]}")
 
-        # echo "$RAW_TABLE"
-        # echo "$COLORED_TABLE"
-
         _create_table "$RAW_TABLE" "#" "${CYAN}" "$COLORED_TABLE"
+
+        [ "${1:-yes}" = "yes" ] && _display_color_legend 
     else
         echo -e "${RED}No plugins loaded/installed${NO_COLOR}"
     fi
 }
 
 # Displays a colored table with the next update date for the plugin manager.
+# $1 (Optional yes/no): Display legend? Default: yes
 check_mgr_update_date(){
     local raw_msg="zsh-mgr#$(date -d @"$(( $(cat "$ZSH_PLUGIN_DIR"/.zsh-mgr) + MGR_TIME_THRESHOLD ))" "+%d-%m-%Y %H:%M:%S" )"
     local colored_msg=$(_color_row_on_date "zsh-mgr#$(cat "$ZSH_PLUGIN_DIR"/.zsh-mgr)" "#" "$MGR_TIME_THRESHOLD")
 
-    # echo "$raw_msg -> $colored_msg"
-
     _create_table "Manager#Next update\n$raw_msg" "#" "${GREEN}" "Manager#Next update\n$colored_msg"
+
+    [ "${1:-yes}" = "yes" ] && _display_color_legend 
+
+    return 0
 }
 
 # Displays a colored table with the next update date for the plugins and the plugin manager itself.
+# $1 (Optional yes/no): Display legend? Default: yes
 ck_mgr_plugin(){
-    check_plugins_update_date
-    check_mgr_update_date
+    check_mgr_update_date no
+    check_plugins_update_date no
+
+    [ "${1:-yes}" = "yes" ] && _display_color_legend
 }
 
 # Makes a table of every plugin and its update date.
