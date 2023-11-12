@@ -248,11 +248,13 @@ _change_column_entry(){
 # 
 # $2: Delimiter
 # 
-# $3 (Optional): Same array as $1, but colored. It only needs to be used when you want color in the output.
+# $3: Table color. Leave empty or empty string to paint it in the default terminal color.
 # 
-# _create_table "hola:queso:adios" ":"
-# _create_table "hola:queso:adios\nhola:bola:cola" ":"
-# _create_table "hola:queso:adios\nhola:bola:colaxddasdasdd" ":"
+# $4 (Optional): Same array as $1, but colored. It only needs to be used when you want color in the output.
+# 
+# _create_table "hola:queso:adios" ":" ""
+# _create_table "hola:queso:adios\nhola:bola:cola" ":" ""
+# _create_table "hola:queso:adios\nhola:bola:colaxddasdasdd" ":" ""
 _create_table(){
     local -r RAW_TABLE=("${(@f)$(echo "$1")}")
     local -r DELIM="$2"
@@ -265,23 +267,26 @@ _create_table(){
         return 1
     fi
 
-    if [ "$#" -eq "3" ];
+    local -r COLOR="${3:-"${NO_COLOR}"}"  
+
+    # Check if there is colored text
+    if [ "$#" -eq "4" ];
     then
-        local -r TABLE=("${(@f)$(echo "$3")}")
+        local -r TABLE=("${(@f)$(echo "$4")}")
     else
         local -r TABLE=("${RAW_TABLE[@]}")
     fi
 
     # Top of table
-    printf "┌"
+    printf "${COLOR}┌${NO_COLOR}"
 
     for i in {1..$COL_NUM}
     do
-        printf "%0.s─" $(seq 1 "$(_get_column_text_at "$MAX_CHAR_COL" "$i" "$DELIM")")
+        printf "%0.s${COLOR}─${NO_COLOR}" $(seq 1 "$(_get_column_text_at "$MAX_CHAR_COL" "$i" "$DELIM")")
 
-        [ "$COL_NUM" -gt "1" ] && [ "$i" -lt "$COL_NUM" ] && printf "┬"
+        [ "$COL_NUM" -gt "1" ] && [ "$i" -lt "$COL_NUM" ] && printf "${COLOR}┬${NO_COLOR}"
     done
-    printf "┐\n"
+    printf "${COLOR}┐${NO_COLOR}\n"
 
     # Content of table
     local spaces="0"
@@ -291,7 +296,7 @@ _create_table(){
 
     for i in {1..${#TABLE[@]}}
     do
-        printf "│"
+        printf "${COLOR}│${NO_COLOR}"
         for j in {1..$COL_NUM}
         do
             # Max character length of this column
@@ -315,7 +320,7 @@ _create_table(){
 
             printf "%0.s$SPACE_CHAR" $(seq 1 $spaces)
 
-            printf "│"
+            printf "${COLOR}│${NO_COLOR}"
         done
 
         # Print the middle line
@@ -323,27 +328,27 @@ _create_table(){
 
         if [ "$i" -lt "${#TABLE[@]}" ];
         then
-            printf "├"
+            printf "${COLOR}├${NO_COLOR}"
 
             for i in {1..$COL_NUM}
             do
-                printf "%0.s─" $(seq 1 "$(_get_column_text_at "$MAX_CHAR_COL" "$i" "$DELIM")")
+                printf "%0.s${COLOR}─${NO_COLOR}" $(seq 1 "$(_get_column_text_at "$MAX_CHAR_COL" "$i" "$DELIM")")
 
-                [ "$COL_NUM" -gt "1" ] && [ "$i" -lt "$COL_NUM" ] && printf "┼"
+                [ "$COL_NUM" -gt "1" ] && [ "$i" -lt "$COL_NUM" ] && printf "${COLOR}┼${NO_COLOR}"
             done
-            printf "┤\n"    
+            printf "${COLOR}┤${NO_COLOR}\n"    
         fi
     done
 
 
     # Bottom of table
-    printf "└"
+    printf "${COLOR}└${NO_COLOR}"
 
     for i in {1..$COL_NUM}
     do
-        printf "%0.s─" $(seq 1 "$(_get_column_text_at "$MAX_CHAR_COL" "$i" "$DELIM")")
+        printf "%0.s${COLOR}─${NO_COLOR}" $(seq 1 "$(_get_column_text_at "$MAX_CHAR_COL" "$i" "$DELIM")")
 
-        [ "$COL_NUM" -gt "1" ] && [ "$i" -lt "$COL_NUM" ] && printf "┴"
+        [ "$COL_NUM" -gt "1" ] && [ "$i" -lt "$COL_NUM" ] && printf "${COLOR}┴${NO_COLOR}"
     done
-    printf "┘\n"
+    printf "${COLOR}┘${NO_COLOR}\n"
 }

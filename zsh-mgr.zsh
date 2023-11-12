@@ -125,30 +125,70 @@ update_plugins(){
 
 # date -d @1679524012 "+%d-%m-%Y %H:%M:%S"
 
-check_plugins_update_date() {
-    if [ "${#PLUGIN_LIST[@]}" -ne "0" ]; then
-        local NEXT_DATE
-        for i in "${PLUGIN_LIST[@]}"
-        do
-            # It needs to be writable since it updates in every iteration
-            NEXT_DATE=$(cat "$ZSH_PLUGIN_DIR"/."$i")
-            echo -e "${BRIGHT_CYAN}$i:${NO_COLOR} $(date -d @$((NEXT_DATE+TIME_THRESHOLD)) "+%d-%m-%Y %H:%M:%S")"
-        done    
+# $1: 
+_display_color_legend(){
+    local -r RAW_MSG="RED#Less than 25% left to update.\nYELLOW#Less than 75%, but more than 25% left to update.\nGREEN#Less than 100%, but more than 75% left to update."
+    local -r COLORED_MSG="${RED}RED${NO_COLOR}#Less than 25% left to update.\n${YELLOW}YELLOW${NO_COLOR}#Less than 75%, but more than 25% left to update.\n${GREEN}GREEN${NO_COLOR}#Less than 100%, but more than 75% left to update."
 
+    _create_table "$RAW_MSG" "#" "" "$COLORED_MSG"
+}
+
+# $1 (Optional yes/no): Output legend? 
+check_plugins_update_date() {
+    echo "${1-foo}"
+    if [ "${#PLUGIN_LIST[@]}" -ne "0" ]; then  
+        local RAW_TABLE=("${(@f)$(_plugin_update_to_table no)}")
+        local COLORED_TABLE=("${(@f)$(_plugin_update_to_table yes)}")
+        
+        RAW_TABLE=("Plugin name#Next update" "${RAW_TABLE[@]}")
+        COLORED_TABLE=("Plugin name#Next update" "${COLORED_TABLE[@]}")
+
+        RAW_TABLE=$(printf "%s\n" "${RAW_TABLE[@]}")
+        COLORED_TABLE=$(printf "%s\n" "${COLORED_TABLE[@]}")
+
+        # echo "$RAW_TABLE"
+        # echo "$COLORED_TABLE"
+
+        _create_table "$RAW_TABLE" "#" "${CYAN}" "$COLORED_TABLE"
     else
         echo -e "${RED}No plugins loaded/installed${NO_COLOR}"
     fi
 }
 
+# Displays a colored table with the next update date for the plugin manager.
+check_mgr_update_date(){
+    local raw_msg="zsh-mgr#$(date -d @"$(( $(cat "$ZSH_PLUGIN_DIR"/.zsh-mgr) + MGR_TIME_THRESHOLD ))" "+%d-%m-%Y %H:%M:%S" )"
+    local colored_msg=$(_color_row_on_date "zsh-mgr#$(cat "$ZSH_PLUGIN_DIR"/.zsh-mgr)" "#" "$MGR_TIME_THRESHOLD")
 
-# Maps every plugin to its update date.
-_plugin_update_to_json(){
+    # echo "$raw_msg -> $colored_msg"
+
+    _create_table "Manager#Next update\n$raw_msg" "#" "${GREEN}" "Manager#Next update\n$colored_msg"
+}
+
+# Displays a colored table with the next update date for the plugins and the plugin manager itself.
+ck_mgr_plugin(){
+    check_plugins_update_date
+    check_mgr_update_date
+}
+
+# Makes a table of every plugin and its update date.
+# $1 (yes/no): Color the output?
+_plugin_update_to_table(){
     if [ "${#PLUGIN_LIST[@]}" -ne "0" ]; then
         # Unique to zsh
+        local next_date
+
         for i in "${PLUGIN_LIST[@]}"
         do
-            # plugin_map["$i"]=$(cat "$ZSH_PLUGIN_DIR"/."$i")
-            echo "$i:$(cat "$ZSH_PLUGIN_DIR"/."$i")"
+            if [ "$1" = yes ];
+            then
+                _color_row_on_date "$i#$(cat "$ZSH_PLUGIN_DIR"/."$i")" "#" "$TIME_THRESHOLD"
+            else
+                next_date=$(( $(cat "$ZSH_PLUGIN_DIR"/."$i") + TIME_THRESHOLD ))
+                next_date=$(date -d @"$next_date" "+%d-%m-%Y %H:%M:%S")
+                
+                echo "$i#$next_date"
+            fi
         done
     fi
 }

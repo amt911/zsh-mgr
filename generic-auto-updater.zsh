@@ -144,7 +144,10 @@ _generic_auto_updater(){
 
 
 # $1: Row. The date must be on the last column and in seconds since epoch.
+# Also, the date must represent the last update done.
+# 
 # $2: Delimiter.
+# 
 # $3: Time threshold.
 # 
 # lejos: verde, mediano: amarillo, cerca: rojo
@@ -166,7 +169,7 @@ _color_row_on_date(){
     # if [ "$DATE_DIFF" -lt $(( 0.25 * THRESHOLD )) ];
     if (( $(echo "$DATE_DIFF < $(echo "0.25*$THRESHOLD" | bc -l)" | bc -l) ));
     then
-        color_res="$RED"    
+        color_res="$GREEN"    
         # echo "$DATE_DIFF < $(echo "0.25*$THRESHOLD" | bc -l)" | bc -l
         # echo "Es menos del 25% -> $DATE_DIFF -> $(echo "0.25*$THRESHOLD" | bc -l)"
     
@@ -176,11 +179,13 @@ _color_row_on_date(){
         # echo "$DATE_DIFF < $(echo "0.75*$THRESHOLD" | bc -l)" | bc -l
         # echo "Es menos del 75% -> $DATE_DIFF -> $(echo "0.75*$THRESHOLD" | bc -l)"
     else
-        color_res="$GREEN"
+        color_res="$RED"
         # echo "Ya debería actualizar -> $DATE_DIFF -> $THRESHOLD"
     fi
 
-    local -r OUTPUT_ROW=$(_color_row "$(_change_column_entry "$ROW" "$COL_NUM" "$(date -d @"$DATE_ROW" "+%d-%m-%Y %H:%M:%S")" "$DELIM")" "$DELIM" "$color_res")
+    # IT NEEDS TO ADD THE THRESHOLD TO THE CURRENT DATE
+    local -r NEXT_DATE=$(( DATE_ROW + THRESHOLD ))
+    local -r OUTPUT_ROW=$(_color_row "$(_change_column_entry "$ROW" "$COL_NUM" "$(date -d @"$NEXT_DATE" "+%d-%m-%Y %H:%M:%S")" "$DELIM")" "$DELIM" "$color_res")
 
     echo "$OUTPUT_ROW"
 }
