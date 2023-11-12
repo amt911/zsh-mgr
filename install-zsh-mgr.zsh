@@ -17,11 +17,8 @@ _interactive_install() {
     echo -n "Plugins FULL directory (Can use \$HOME and ~) (empty for default directory): " 
     read -r plugin_dir
 
-    # Expands home variables
-    plugin_dir=$(_sanitize_location "$plugin_dir")
-
     if [ "$plugin_dir" != "" ]; then
-        ZSH_PLUGIN_DIR="$plugin_dir"
+        ZSH_PLUGIN_DIR="$(_sanitize_location "$plugin_dir")"
     fi
 }
 
