@@ -59,15 +59,17 @@ You can force the update process by issuing the following command: ```update_plu
 
 Additionally, you can check the next update date by using the command: ```check_plugins_update_date```
 
+And to see zsh-mgr's update date, type: ```check_mgr_update_date```
+
+Finally, to see both update dates at the same time, use: ```ck_mgr_plugin```
+
 ## TODO
 
 The following features are planned to be implemented in the following commits:
 
-- Updater for the plugin manager itself.
-- Auto-update for the plugin manager.
+- <del>Updater for the plugin manager itself.</del>
+- <del>Auto-update for the plugin manager.</del>
 - Delete unused plugins.
 - Change update settings:
   - Disable auto-update.
   - Change updates frequency.
-
-TODO
