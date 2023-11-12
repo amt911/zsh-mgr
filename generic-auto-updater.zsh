@@ -9,7 +9,7 @@ else
 fi 
 
 source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"
-source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-functions.zsh"
+source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-mgr-common-functions.zsh"
 
 # Converts the repo folder input to the timestamp file.
 # 
@@ -140,4 +140,88 @@ _generic_auto_updater(){
         # echo "Tengo que actualizar"
         _generic_updater "$1" "$LOCATION" "$TIME_THRESHOLD" "$TIMESTAMP_LOC"
     fi  
+}
+
+
+# $1: Row. The date must be on the last column and in seconds since epoch.
+# Also, the date must represent the last update done.
+# 
+# $2: Delimiter.
+# 
+# $3: Time threshold.
+# 
+# lejos: verde, mediano: amarillo, cerca: rojo
+# date -d @1679524012 "+%d-%m-%Y %H:%M:%S"
+# date +%s
+# _color_row_on_date "hola#adiois#prueba#1699696478" "#" "100"
+_color_row_on_date(){
+    local -r ROW="$1"
+    local -r DELIM="$2"
+    local -r THRESHOLD="$3"
+    local -r DATE_TODAY=$(date +%s)
+    local -r COL_NUM=$(_get_column_length "$ROW" "$DELIM")
+    local -r DATE_ROW=$(_get_column_text_at "$ROW" "$COL_NUM" "$DELIM")
+    local -r DATE_DIFF=$(( DATE_TODAY - DATE_ROW ))
+    local color_res
+
+    # echo "$ROW / $DELIM / $THRESHOLD / $DATE_TODAY / $COL_NUM / $DATE_ROW / $DATE_DIFF"
+
+    # if [ "$DATE_DIFF" -lt $(( 0.25 * THRESHOLD )) ];
+    if (( $(echo "$DATE_DIFF < $(echo "0.25*$THRESHOLD" | bc -l)" | bc -l) ));
+    then
+        color_res="$GREEN"    
+        # echo "$DATE_DIFF < $(echo "0.25*$THRESHOLD" | bc -l)" | bc -l
+        # echo "Es menos del 25% -> $DATE_DIFF -> $(echo "0.25*$THRESHOLD" | bc -l)"
+    
+    elif (( $(echo "$DATE_DIFF < $(echo "0.75*$THRESHOLD" | bc -l)" | bc -l) ));
+    then
+        color_res="$YELLOW"
+        # echo "$DATE_DIFF < $(echo "0.75*$THRESHOLD" | bc -l)" | bc -l
+        # echo "Es menos del 75% -> $DATE_DIFF -> $(echo "0.75*$THRESHOLD" | bc -l)"
+    else
+        color_res="$RED"
+        # echo "Ya debería actualizar -> $DATE_DIFF -> $THRESHOLD"
+    fi
+
+    # IT NEEDS TO ADD THE THRESHOLD TO THE CURRENT DATE
+    local -r NEXT_DATE=$(( DATE_ROW + THRESHOLD ))
+    local -r OUTPUT_ROW=$(_color_row "$(_change_column_entry "$ROW" "$COL_NUM" "$(date -d @"$NEXT_DATE" "+%d-%m-%Y %H:%M:%S")" "$DELIM")" "$DELIM" "$color_res")
+
+    echo "$OUTPUT_ROW"
+}
+
+# $1: 
+_display_color_legend(){
+    local -r RAW_MSG="RED#Less than 25% left to update.\nYELLOW#Less than 75%, but more than 25% left to update.\nGREEN#Less than 100%, but more than 75% left to update."
+    local -r COLORED_MSG="${RED}RED${NO_COLOR}#Less than 25% left to update.\n${YELLOW}YELLOW${NO_COLOR}#Less than 75%, but more than 25% left to update.\n${GREEN}GREEN${NO_COLOR}#Less than 100%, but more than 75% left to update."
+
+    _create_table "$RAW_MSG" "#" "" "$COLORED_MSG"
+}
+
+# $1: Component name to be printed.
+# $2: Repository location.
+# $3: Time threshold.
+# $4: First row name separated by "#". Example: Hello#Bye Bye
+# $5 (Optional): Table color. Leave empty string for no color.
+# $6 (Optional yes/no): Display color legend? Default: yes
+# $7 (Optional): Timestamp file location. If not set it will use $ZSH_PLUGIN_DIR.
+_check_comp_update_date(){
+    local -r COMP_NAME="$1"
+    local -r REPO_LOC="$2"
+    local -r THRESHOLD="$3"
+    local -r FIRST_ROW="$4"
+    local -r TABLE_COLOR="${5:-""}"
+    local -r LEGEND="${6:-yes}"
+    local -r TST_DIR="${7:-$ZSH_PLUGIN_DIR}"
+    local -r TST_FILE_LOC="$(_from_repo_to_time_file "$REPO_LOC" "$TST_DIR")"
+
+
+    local raw_msg="$COMP_NAME#$(date -d @"$(( $(cat "$TST_FILE_LOC") + THRESHOLD ))" "+%d-%m-%Y %H:%M:%S" )"
+    local colored_msg=$(_color_row_on_date "$COMP_NAME#$(cat "$TST_FILE_LOC")" "#" "$THRESHOLD")
+
+    _create_table "$FIRST_ROW\n$raw_msg" "#" "$TABLE_COLOR" "$FIRST_ROW\n$colored_msg"
+
+    [ "$LEGEND" = "yes" ] && _display_color_legend 
+
+    return 0    
 }

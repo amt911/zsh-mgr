@@ -8,7 +8,7 @@ readonly ZSH_CONFIG_DIR="$HOME/.config/zsh"
 
 # Source neccesary functions and exports
 source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"
-source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-functions.zsh"
+source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-mgr-common-functions.zsh"
 
 _interactive_install() {
     local plugin_dir
