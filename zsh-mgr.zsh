@@ -112,10 +112,12 @@ _auto_update_plugin(){
 # Updates all loaded plugins
 update_plugins(){
     if [ "${#PLUGIN_LIST[@]}" -ne "0" ]; then
+        local i
         for i in "${PLUGIN_LIST[@]}"
         do
             _update_plugin "$i"
         done    
+        unset i
 
     else
         echo -e "${RED}No plugins loaded/installed${NO_COLOR}"
@@ -175,6 +177,7 @@ _plugin_update_to_table(){
     if [ "${#PLUGIN_LIST[@]}" -ne "0" ]; then
         # Unique to zsh
         local next_date
+        local i
 
         for i in "${PLUGIN_LIST[@]}"
         do
@@ -188,6 +191,7 @@ _plugin_update_to_table(){
                 echo "$i#$next_date"
             fi
         done
+        unset i
     fi
 }
 

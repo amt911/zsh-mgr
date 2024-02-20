@@ -12,10 +12,11 @@ datos=(
 printf "%-20s %-20s\n" "Columna1" "Columna2"
 
 # Imprimir filas
+local fila
 for fila in "${datos[@]}"; do
   printf "%-20s %-20s\n" $fila
 done
-
+unset fila
 
 
 # Función para imprimir una fila de la tabla
