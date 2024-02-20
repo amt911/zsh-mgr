@@ -18,8 +18,10 @@ readonly CYAN='\033[0;36m'
 # echo "${GRAY}hola${NO_COLOR}"
 
 _print_colors(){
+    local i
     for i in {1..255}
     do
         echo -e "\033[0;${i}m$i$NO_COLOR"
     done
+    unset i
 }
