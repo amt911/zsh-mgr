@@ -6,7 +6,8 @@ else
     return 0
 fi 
 
-export REPO_URL="https://github.com"
+export REPO_URL="https://github.com/"
+export PRIVATE_REPO_URL="git@github.com:"
 
 PLUGIN_LIST=()  # Empty array for plugins
 
@@ -48,12 +49,21 @@ _source_plugin() {
 }
 
 # Adds a plugin and updates it every week. Then it sources it.
-# $1: user/plugin (that is the expected format)
-# $2: extra git params (like --depth)
+# $1: user/plugin. If it is a private repo, input the whole URL
+# $2 (optional): extra git params (like --depth)
 add_plugin() {
-    local -r AUTHOR=$(echo "$1" | cut -d "/" -f 1)
-    local -r PLUGIN_NAME=$(echo "$1" | cut -d "/" -f 2)
-    # local error=0 # By default, there are no errors
+    local AUTHOR=$(echo "$1" | cut -d "/" -f 1)
+    local PLUGIN_NAME=$(echo "$1" | cut -d "/" -f 2)
+    local final_url="$REPO_URL"
+
+    if echo "$1" | grep "$PRIVATE_REPO_URL" > /dev/null;
+    then
+        final_url="$PRIVATE_REPO_URL"
+        AUTHOR=$(echo "$1" | cut -d ":" -f 2 |cut -d "/" -f 1)
+        PLUGIN_NAME=$(echo "$1" | cut -d ":" -f 2 | cut -d "/" -f 2 | cut -d "." -f 1)
+
+        # echo "$final_url $AUTHOR $PLUGIN_NAME"
+    fi
 
     # Se comprueba si existe el directorio, indicando que se ha descargado
     if [ ! -d "$ZSH_PLUGIN_DIR/$PLUGIN_NAME" ]; then
@@ -62,9 +72,9 @@ add_plugin() {
 
         # Si se pide algun comando extra a git, se pone como entrada a la funcion
         if [ "$#" -eq 2 ]; then
-            git clone "$2" "$REPO_URL/$1" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
+            git clone "$2" "$final_url$AUTHOR/$PLUGIN_NAME.git" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
         else
-            git clone "$REPO_URL/$1" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
+            git clone "$final_url$AUTHOR/$PLUGIN_NAME.git" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
         fi
 
         # Solo en caso de que haya tenido exito el clonado
@@ -200,6 +210,14 @@ update_mgr(){
 _auto_update_mgr(){
     _generic_auto_updater "zsh-mgr" "$ZSH_CONFIG_DIR/zsh-mgr" "$MGR_TIME_THRESHOLD"
 }
+
+# Recreates plugin directory if it does not exist anymore
+_check_plugin_dir_exists(){
+    [ ! -d "$ZSH_PLUGIN_DIR" ] && mkdir "$ZSH_PLUGIN_DIR"
+}
+
+# Checks if the plugin directory exists
+_check_plugin_dir_exists
 
 # Calls the auto-updater for the plugin manager
 _auto_update_mgr
