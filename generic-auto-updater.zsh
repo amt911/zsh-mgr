@@ -162,32 +162,32 @@ _color_row_on_date(){
     local -r COL_NUM=$(_get_column_length "$ROW" "$DELIM")
     local -r DATE_ROW=$(_get_column_text_at "$ROW" "$COL_NUM" "$DELIM")
     local -r DATE_DIFF=$(( DATE_TODAY - DATE_ROW ))
+    local -r NEXT_DATE=$(( DATE_ROW + THRESHOLD ))
     local color_res
+    local output_row
 
-    # echo "$ROW / $DELIM / $THRESHOLD / $DATE_TODAY / $COL_NUM / $DATE_ROW / $DATE_DIFF"
+    # If bc does not exist, then we leave the output the same
+    if ! check_cmd_exists "bc";
+    then
+        output_row=$(_change_column_entry "$ROW" "$COL_NUM" "$(date -d @"$NEXT_DATE" "+%d-%m-%Y %H:%M:%S")" "$DELIM")
+        echo "$output_row"
+        return 1
+    fi
 
-    # if [ "$DATE_DIFF" -lt $(( 0.25 * THRESHOLD )) ];
     if (( $(echo "$DATE_DIFF < $(echo "0.25*$THRESHOLD" | bc -l)" | bc -l) ));
     then
         color_res="$GREEN"    
-        # echo "$DATE_DIFF < $(echo "0.25*$THRESHOLD" | bc -l)" | bc -l
-        # echo "Es menos del 25% -> $DATE_DIFF -> $(echo "0.25*$THRESHOLD" | bc -l)"
-    
     elif (( $(echo "$DATE_DIFF < $(echo "0.75*$THRESHOLD" | bc -l)" | bc -l) ));
     then
         color_res="$YELLOW"
-        # echo "$DATE_DIFF < $(echo "0.75*$THRESHOLD" | bc -l)" | bc -l
-        # echo "Es menos del 75% -> $DATE_DIFF -> $(echo "0.75*$THRESHOLD" | bc -l)"
     else
         color_res="$RED"
-        # echo "Ya debería actualizar -> $DATE_DIFF -> $THRESHOLD"
     fi
 
     # IT NEEDS TO ADD THE THRESHOLD TO THE CURRENT DATE
-    local -r NEXT_DATE=$(( DATE_ROW + THRESHOLD ))
-    local -r OUTPUT_ROW=$(_color_row "$(_change_column_entry "$ROW" "$COL_NUM" "$(date -d @"$NEXT_DATE" "+%d-%m-%Y %H:%M:%S")" "$DELIM")" "$DELIM" "$color_res")
+    output_row=$(_color_row "$(_change_column_entry "$ROW" "$COL_NUM" "$(date -d @"$NEXT_DATE" "+%d-%m-%Y %H:%M:%S")" "$DELIM")" "$DELIM" "$color_res")
 
-    echo "$OUTPUT_ROW"
+    echo "$output_row"
 }
 
 # $1: 
@@ -214,10 +214,17 @@ _check_comp_update_date(){
     local -r LEGEND="${6:-yes}"
     local -r TST_DIR="${7:-$ZSH_PLUGIN_DIR}"
     local -r TST_FILE_LOC="$(_from_repo_to_time_file "$REPO_LOC" "$TST_DIR")"
+    local raw_msg
+    local colored_msg
 
-
-    local raw_msg="$COMP_NAME#$(date -d @"$(( $(cat "$TST_FILE_LOC") + THRESHOLD ))" "+%d-%m-%Y %H:%M:%S" )"
-    local colored_msg=$(_color_row_on_date "$COMP_NAME#$(cat "$TST_FILE_LOC")" "#" "$THRESHOLD")
+    if [ ! -f "$TST_FILE_LOC" ];
+    then
+        raw_msg="$COMP_NAME#unknown"        
+        colored_msg="$raw_msg"
+    else
+        raw_msg="$COMP_NAME#$(date -d @"$(( $(cat "$TST_FILE_LOC") + THRESHOLD ))" "+%d-%m-%Y %H:%M:%S" )"
+        colored_msg=$(_color_row_on_date "$COMP_NAME#$(cat "$TST_FILE_LOC")" "#" "$THRESHOLD")
+    fi
 
     _create_table "$FIRST_ROW\n$raw_msg" "#" "$TABLE_COLOR" "$FIRST_ROW\n$colored_msg"
 

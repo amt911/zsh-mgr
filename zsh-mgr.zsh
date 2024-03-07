@@ -8,10 +8,6 @@ fi
 
 export REPO_URL="https://github.com"
 
-# Time threshold
-export TIME_THRESHOLD=604800        # 1 week in seconds
-export MGR_TIME_THRESHOLD=604800    # 1 week in seconds
-
 PLUGIN_LIST=()  # Empty array for plugins
 
 source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"

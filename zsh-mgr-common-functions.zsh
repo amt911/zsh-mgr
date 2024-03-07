@@ -368,3 +368,12 @@ _create_table(){
     unset i
     printf "${COLOR}┘${NO_COLOR}\n"
 }
+
+# Checks if a command exists.
+# $1: Command name.
+# return: returns 0 if the command exists. 1 otherwise.
+check_cmd_exists(){
+    local -r CMD="$1"
+
+    command -v "$CMD" > /dev/null
+}

@@ -29,6 +29,8 @@ You can manually clone the repo to your desired location and add the following l
 ```console
 export ZSH_CONFIG_DIR="parent/folder/from/repo"
 export ZSH_PLUGIN_DIR="your/desired/location"
+export TIME_THRESHOLD="your desired time in seconds"
+export MGR_TIME_THRESHOLD="your desired time in seconds"
 
 source parent/folder/from/repo/zsh-mgr/zsh-mgr.zsh
 ```

@@ -43,9 +43,11 @@ _prepend_to_file() {
 _prepend_to_config() {
     local -r PLUGIN_DIR="export ZSH_PLUGIN_DIR=\"$ZSH_PLUGIN_DIR\""
     local -r CONFIG_DIR="export ZSH_CONFIG_DIR=\"\$HOME/.config/zsh\""
+    local -r TIME1="export TIME_THRESHOLD=604800"
+    local -r TIME2="export TIME_THRESHOLD=604800"
     local -r SOURCE_FILE="source \$ZSH_CONFIG_DIR/zsh-mgr/zsh-mgr.zsh"
 
-    _prepend_to_file "$HOME/.zshrc" "$PLUGIN_DIR\n$CONFIG_DIR\n\n$SOURCE_FILE\n\n"
+    _prepend_to_file "$HOME/.zshrc" "$PLUGIN_DIR\n$CONFIG_DIR\n$TIME1\n$TIME2\n\n$SOURCE_FILE\n\n"
 }
 
 # Creates a symbolic link to the package manager file
