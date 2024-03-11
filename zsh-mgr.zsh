@@ -6,7 +6,8 @@ else
     return 0
 fi 
 
-export REPO_URL="https://github.com"
+export REPO_URL="https://github.com/"
+export PRIVATE_REPO_URL="git@github.com:"
 
 PLUGIN_LIST=()  # Empty array for plugins
 
@@ -14,73 +15,24 @@ source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"
 source "$ZSH_CONFIG_DIR/zsh-mgr/generic-auto-updater.zsh"
 source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-mgr-common-functions.zsh"
 
-# Sources a plugin to load it on the shell
-# $1: Plugin's author
-# $2: Plugin name
-_source_plugin() {
-    local directory
+# Adds a plugin and updates periodically.
+# $1: user/plugin. If it is a private repo, input the whole URL
+# $2 (optional): extra git params (like --depth)
+add_plugin() {
+    local -r PARAMS="${2:-}"
+    local -r URL="$REPO_URL"
 
-    if [ -f "$ZSH_PLUGIN_DIR/$2/$2.plugin.zsh" ]; then
-        directory="$ZSH_PLUGIN_DIR/$2/$2.plugin.zsh"
-
-    elif [ -f "$ZSH_PLUGIN_DIR/$2/$2.zsh" ]; then
-        directory="$ZSH_PLUGIN_DIR/$2/$2.zsh"
-
-    # This one is for powerlevel10k
-    elif [ -f "$ZSH_PLUGIN_DIR/$2/$2.zsh-theme" ]; then
-        directory="$ZSH_PLUGIN_DIR/$2/$2.zsh-theme"
-
-    else
-        echo -e "${RED}Error adding plugin $2:${NO_COLOR} Script not found"
-        return 1
-    fi
-
-    if ! source "$directory"; then
-        echo -e "${RED}Error adding plugin $2:${NO_COLOR} Unknown error"
-        return 1
-    fi
-
-
-    # Adds the sourced plugin to the plugin list
-    PLUGIN_LIST=("${PLUGIN_LIST[@]}" "$2")
-
-    return 0
+    _generic_add_plugin "$1" "$URL" "$PARAMS"
 }
 
-# Adds a plugin and updates it every week. Then it sources it.
-# $1: user/plugin (that is the expected format)
-# $2: extra git params (like --depth)
-add_plugin() {
-    local -r AUTHOR=$(echo "$1" | cut -d "/" -f 1)
-    local -r PLUGIN_NAME=$(echo "$1" | cut -d "/" -f 2)
-    # local error=0 # By default, there are no errors
+# Adds a plugin from a private repo and updates it periodically.
+# $1: user/plugin. If it is a private repo, input the whole URL
+# $2 (optional): extra git params (like --depth)
+add_plugin_private(){
+    local -r PARAMS="${2:-}"
+    local -r URL="$PRIVATE_REPO_URL"
 
-    # Se comprueba si existe el directorio, indicando que se ha descargado
-    if [ ! -d "$ZSH_PLUGIN_DIR/$PLUGIN_NAME" ]; then
-        local -r raw_msg="Installing $PLUGIN_NAME"
-        print_message "Installing $GREEN$PLUGIN_NAME$NO_COLOR" "$((COLUMNS - 4))" "$BRIGHT_CYAN#$NO_COLOR" "${#raw_msg}"
-
-        # Si se pide algun comando extra a git, se pone como entrada a la funcion
-        if [ "$#" -eq 2 ]; then
-            git clone "$2" "$REPO_URL/$1" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
-        else
-            git clone "$REPO_URL/$1" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
-        fi
-
-        # Solo en caso de que haya tenido exito el clonado
-        if [ "$?" -eq 0 ]; then
-            # Se le añade una marca de tiempo para que cuando pase un tiempo determinado haga pull al plugin indicado
-            date +%s >"$ZSH_PLUGIN_DIR/.$PLUGIN_NAME"
-        else
-            # error=1
-            echo -e "${RED}Error installing $PLUGIN_NAME${NO_COLOR}"
-
-            return 1
-        fi
-    fi
-
-    _auto_update_plugin "$PLUGIN_NAME"
-    _source_plugin "$AUTHOR" "$PLUGIN_NAME"
+    _generic_add_plugin "$1" "$URL" "$PARAMS"
 }
 
 
@@ -90,17 +42,6 @@ add_plugin() {
 _update_plugin(){
     local -r PLUGIN_NAME="$1"
     _generic_updater "$PLUGIN_NAME" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"   
-}
-
-
-# Auto-updater for plugins.
-# 
-# $1: The name of the plugin.
-_auto_update_plugin(){
-    local -r PLUGIN_NAME="$1"
-    local -r REPO_LOC="$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
-
-    _generic_auto_updater "$PLUGIN_NAME" "$REPO_LOC" "$TIME_THRESHOLD"
 }
 
 #\\033\[0;?[0-9]*m to find ansi escape codes
@@ -200,6 +141,14 @@ update_mgr(){
 _auto_update_mgr(){
     _generic_auto_updater "zsh-mgr" "$ZSH_CONFIG_DIR/zsh-mgr" "$MGR_TIME_THRESHOLD"
 }
+
+# Recreates plugin directory if it does not exist anymore
+_check_plugin_dir_exists(){
+    [ ! -d "$ZSH_PLUGIN_DIR" ] && mkdir "$ZSH_PLUGIN_DIR"
+}
+
+# Checks if the plugin directory exists
+_check_plugin_dir_exists
 
 # Calls the auto-updater for the plugin manager
 _auto_update_mgr

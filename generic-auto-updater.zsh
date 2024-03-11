@@ -232,3 +232,83 @@ _check_comp_update_date(){
 
     return 0    
 }
+
+# Auto-updater for plugins.
+# 
+# $1: The name of the plugin.
+_auto_update_plugin(){
+    local -r PLUGIN_NAME="$1"
+    local -r REPO_LOC="$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
+
+    _generic_auto_updater "$PLUGIN_NAME" "$REPO_LOC" "$TIME_THRESHOLD"
+}
+
+# Sources a plugin to load it on the shell
+# $1: Plugin's author
+# $2: Plugin name
+_source_plugin() {
+    local directory
+
+    if [ -f "$ZSH_PLUGIN_DIR/$2/$2.plugin.zsh" ]; then
+        directory="$ZSH_PLUGIN_DIR/$2/$2.plugin.zsh"
+
+    elif [ -f "$ZSH_PLUGIN_DIR/$2/$2.zsh" ]; then
+        directory="$ZSH_PLUGIN_DIR/$2/$2.zsh"
+
+    # This one is for powerlevel10k
+    elif [ -f "$ZSH_PLUGIN_DIR/$2/$2.zsh-theme" ]; then
+        directory="$ZSH_PLUGIN_DIR/$2/$2.zsh-theme"
+
+    else
+        echo -e "${RED}Error adding plugin $2:${NO_COLOR} Script not found"
+        return 1
+    fi
+
+    if ! source "$directory"; then
+        echo -e "${RED}Error adding plugin $2:${NO_COLOR} Unknown error"
+        return 1
+    fi
+
+
+    # Adds the sourced plugin to the plugin list
+    PLUGIN_LIST=("${PLUGIN_LIST[@]}" "$2")
+
+    return 0
+}
+
+
+# Generic function to add a plugin to zsh.
+# $1: user/plugin format. 
+# $2: repo URL.
+# $2 (optional): extra git params (like --depth).
+_generic_add_plugin() {
+    local AUTHOR=$(echo "$1" | cut -d "/" -f 1)
+    local PLUGIN_NAME=$(echo "$1" | cut -d "/" -f 2)
+    local -r URL="$2"
+
+    # Se comprueba si existe el directorio, indicando que se ha descargado
+    if [ ! -d "$ZSH_PLUGIN_DIR/$PLUGIN_NAME" ]; then
+        local -r raw_msg="Installing $PLUGIN_NAME"
+        print_message "Installing $GREEN$PLUGIN_NAME$NO_COLOR" "$((COLUMNS - 4))" "$BRIGHT_CYAN#$NO_COLOR" "${#raw_msg}"
+
+        # Si se pide algun comando extra a git, se pone como entrada a la funcion
+        if [ -z "$3" ]; then
+            git clone "$URL$AUTHOR/$PLUGIN_NAME.git" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
+        else
+            git clone "$3" "$URL$AUTHOR/$PLUGIN_NAME.git" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
+        fi
+
+        # Solo en caso de que haya tenido exito el clonado
+        if [ "$?" -eq 0 ]; then
+            # Se le añade una marca de tiempo para que cuando pase un tiempo determinado haga pull al plugin indicado
+            date +%s >"$ZSH_PLUGIN_DIR/.$PLUGIN_NAME"
+        else
+            echo -e "${RED}Error installing $PLUGIN_NAME${NO_COLOR}"
+
+            return 1
+        fi
+    fi
+
+    _auto_update_plugin "$PLUGIN_NAME"
+    _source_plugin "$AUTHOR" "$PLUGIN_NAME"    
+}

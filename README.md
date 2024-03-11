@@ -47,10 +47,16 @@ You can add your favourite plugins adding this line to your ```.zshrc``` file:
 add_plugin "author/plugin-name"
 ```
 
-And you can add extra flags to the plugin in this way:
+You can add extra flags to the plugin in this way:
 
 ```console
 add_plugin "author/plugin-name" "--flag1 --flag2"
+```
+
+You can add a plugin from a private repository like this:
+
+```console
+add_plugin_private "author/plugin-name" "--flag1 --flag2"
 ```
 
 ### Plugins updater
