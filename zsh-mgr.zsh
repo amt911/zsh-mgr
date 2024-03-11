@@ -15,82 +15,24 @@ source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"
 source "$ZSH_CONFIG_DIR/zsh-mgr/generic-auto-updater.zsh"
 source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-mgr-common-functions.zsh"
 
-# Sources a plugin to load it on the shell
-# $1: Plugin's author
-# $2: Plugin name
-_source_plugin() {
-    local directory
-
-    if [ -f "$ZSH_PLUGIN_DIR/$2/$2.plugin.zsh" ]; then
-        directory="$ZSH_PLUGIN_DIR/$2/$2.plugin.zsh"
-
-    elif [ -f "$ZSH_PLUGIN_DIR/$2/$2.zsh" ]; then
-        directory="$ZSH_PLUGIN_DIR/$2/$2.zsh"
-
-    # This one is for powerlevel10k
-    elif [ -f "$ZSH_PLUGIN_DIR/$2/$2.zsh-theme" ]; then
-        directory="$ZSH_PLUGIN_DIR/$2/$2.zsh-theme"
-
-    else
-        echo -e "${RED}Error adding plugin $2:${NO_COLOR} Script not found"
-        return 1
-    fi
-
-    if ! source "$directory"; then
-        echo -e "${RED}Error adding plugin $2:${NO_COLOR} Unknown error"
-        return 1
-    fi
-
-
-    # Adds the sourced plugin to the plugin list
-    PLUGIN_LIST=("${PLUGIN_LIST[@]}" "$2")
-
-    return 0
-}
-
-# Adds a plugin and updates it every week. Then it sources it.
+# Adds a plugin and updates periodically.
 # $1: user/plugin. If it is a private repo, input the whole URL
 # $2 (optional): extra git params (like --depth)
 add_plugin() {
-    local AUTHOR=$(echo "$1" | cut -d "/" -f 1)
-    local PLUGIN_NAME=$(echo "$1" | cut -d "/" -f 2)
-    local final_url="$REPO_URL"
+    local -r PARAMS="${2:-}"
+    local -r URL="$REPO_URL"
 
-    if echo "$1" | grep "$PRIVATE_REPO_URL" > /dev/null;
-    then
-        final_url="$PRIVATE_REPO_URL"
-        AUTHOR=$(echo "$1" | cut -d ":" -f 2 |cut -d "/" -f 1)
-        PLUGIN_NAME=$(echo "$1" | cut -d ":" -f 2 | cut -d "/" -f 2 | cut -d "." -f 1)
+    _generic_add_plugin "$1" "$URL" "$PARAMS"
+}
 
-        # echo "$final_url $AUTHOR $PLUGIN_NAME"
-    fi
+# Adds a plugin from a private repo and updates it periodically.
+# $1: user/plugin. If it is a private repo, input the whole URL
+# $2 (optional): extra git params (like --depth)
+add_plugin_private(){
+    local -r PARAMS="${2:-}"
+    local -r URL="$PRIVATE_REPO_URL"
 
-    # Se comprueba si existe el directorio, indicando que se ha descargado
-    if [ ! -d "$ZSH_PLUGIN_DIR/$PLUGIN_NAME" ]; then
-        local -r raw_msg="Installing $PLUGIN_NAME"
-        print_message "Installing $GREEN$PLUGIN_NAME$NO_COLOR" "$((COLUMNS - 4))" "$BRIGHT_CYAN#$NO_COLOR" "${#raw_msg}"
-
-        # Si se pide algun comando extra a git, se pone como entrada a la funcion
-        if [ "$#" -eq 2 ]; then
-            git clone "$2" "$final_url$AUTHOR/$PLUGIN_NAME.git" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
-        else
-            git clone "$final_url$AUTHOR/$PLUGIN_NAME.git" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
-        fi
-
-        # Solo en caso de que haya tenido exito el clonado
-        if [ "$?" -eq 0 ]; then
-            # Se le añade una marca de tiempo para que cuando pase un tiempo determinado haga pull al plugin indicado
-            date +%s >"$ZSH_PLUGIN_DIR/.$PLUGIN_NAME"
-        else
-            # error=1
-            echo -e "${RED}Error installing $PLUGIN_NAME${NO_COLOR}"
-
-            return 1
-        fi
-    fi
-
-    _auto_update_plugin "$PLUGIN_NAME"
-    _source_plugin "$AUTHOR" "$PLUGIN_NAME"
+    _generic_add_plugin "$1" "$URL" "$PARAMS"
 }
 
 
@@ -100,17 +42,6 @@ add_plugin() {
 _update_plugin(){
     local -r PLUGIN_NAME="$1"
     _generic_updater "$PLUGIN_NAME" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"   
-}
-
-
-# Auto-updater for plugins.
-# 
-# $1: The name of the plugin.
-_auto_update_plugin(){
-    local -r PLUGIN_NAME="$1"
-    local -r REPO_LOC="$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
-
-    _generic_auto_updater "$PLUGIN_NAME" "$REPO_LOC" "$TIME_THRESHOLD"
 }
 
 #\\033\[0;?[0-9]*m to find ansi escape codes
