@@ -53,10 +53,10 @@ You can add extra flags to the plugin in this way:
 add_plugin "author/plugin-name" "--flag1 --flag2"
 ```
 
-You can also use a SSH connection to a repository like this:
+You can add a plugin from a private repository like this:
 
 ```console
-add_plugin "git@github.com:author/plugin-name.git" "--flag1 --flag2"
+add_plugin_private "author/plugin-name" "--flag1 --flag2"
 ```
 
 ### Plugins updater
