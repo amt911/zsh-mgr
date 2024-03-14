@@ -11,7 +11,7 @@ A simple plugin manager for zsh. Features:
 First, clone the repository and execute the installation script using the following command:
 
 ```console
-git clone "git@github.com:amt911/zsh-mgr.git" ~/.config/zsh/zsh-mgr && cp ~/.config/zsh/zsh-mgr/install-zsh-mgr.zsh ~ && ~/install-zsh-mgr.zsh && rm ~/install-zsh-mgr.zsh
+git clone "https://github.com/amt911/zsh-mgr.git" ~/.config/zsh/zsh-mgr && cp ~/.config/zsh/zsh-mgr/install-zsh-mgr.zsh ~ && ~/install-zsh-mgr.zsh && rm ~/install-zsh-mgr.zsh
 ```
 
 If the installation failed for some reason, execute the script again using:
