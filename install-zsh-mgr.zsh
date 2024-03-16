@@ -147,4 +147,4 @@ main(){
     _prepend_to_config "$final_time_plugin" "$final_time_mgr"
 }
 
-# main "$@"
+main "$@"
