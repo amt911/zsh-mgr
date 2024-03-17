@@ -14,7 +14,7 @@ _interactive_install() {
     local plugin_dir
 
     # Then, we add new lines to the config file to install the package manager
-    echo -n "Plugins FULL directory (Can use \$HOME and ~) (empty for default directory): " 
+    echo -n "${YELLOW}Plugins FULL directory (Can use \$HOME and ~) (empty for default directory):${NO_COLOR} " 
     read -r plugin_dir
 
     if [ "$plugin_dir" != "" ]; then
@@ -103,11 +103,39 @@ _prepend_to_config() {
     _prepend_to_file "$HOME/.zshrc" "$PLUGIN_DIR\n$CONFIG_DIR\n$TIME1\n$TIME2\n\n$SOURCE_FILE\n\n"
 }
 
+# Detects if zsh-mgr has been installed.
+# return: 0 if it is installed (no errors), 1 otherwise.
+_is_mgr_installed(){
+    local -r WORDS=("export ZSH_PLUGIN_DIR=" "export ZSH_CONFIG_DIR" "export TIME_THRESHOLD=" "export MGR_TIME_THRESHOLD=" "source \$ZSH_CONFIG_DIR/zsh-mgr/zsh-mgr.zsh")
+
+    local result=1
+
+    # Iterates over all the lines this scripts creates on .zshrc
+    local i
+    for i in "${WORDS[@]}"
+    do
+        if grep -E "^$i" "$HOME/.zshrc" > /dev/null;
+        then
+            result=0
+            break
+        fi
+    done
+    unset i
+
+    return "$result"
+}
+
 main(){
     # Check check wether .zshrc exists
     if [ ! -f "$HOME/.zshrc" ]; then
         echo "${BRIGHT_CYAN}Creating .zshrc file...${NO_COLOR}"
         touch "$HOME/.zshrc"
+    fi
+
+    if _is_mgr_installed;
+    then
+        echo "${RED}zsh-mgr has been installed or partially installed, exiting...${NO_COLOR}"
+        exit 1
     fi
 
     # Check if the package manager is going to be installed silently with default options
@@ -130,7 +158,12 @@ main(){
     _create_directories
     _prepend_to_config "$time_plugin_sec" "$time_mgr_sec"
 
-    echo -e "${GREEN}zsh-mgr installed successfully!${NO_COLOR}\nYou can now add plugins to your .zshrc file.\n"
+    echo -e "\n${GREEN}zsh-mgr installed successfully!${NO_COLOR}\nYou can now add plugins to your .zshrc file.\n"
 }
 
-main "$@"
+# main "$@"
+
+if _is_mgr_installed;
+then
+    echo "its fast"
+fi
