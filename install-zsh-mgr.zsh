@@ -1,10 +1,10 @@
 #!/bin/zsh
 
-# DEBUG FOR PAK USER: mkdir -p .config/zsh && sudo cp -r /home/andres/zsh-mgr .config/zsh && sudo chown -R pak:pak .config/zsh/zsh-mgr; touch .zshrc && chmod +x .zshrc && sudo cp -r ~andres/.ssh . && sudo chown -R pak:pak .ssh
-
-# Default plugin manager locations
+# Default plugin manager locations and time intervals
 ZSH_PLUGIN_DIR="$HOME/.zsh-plugins"
 readonly ZSH_CONFIG_DIR="$HOME/.config/zsh"
+time_plugin_sec="604800"
+time_mgr_sec="604800"
 
 # Source neccesary functions and exports
 source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"
@@ -42,7 +42,7 @@ _prepend_to_file() {
 
 # $1: Time formatted using s,m,h,d,w as seconds, minutes, hours, days and weeks.
 # return: The time in seconds, an error code the format is wrong.
-parse_time(){
+_parse_time(){
     local -r TIME="$1"
 
     # Check if the format is incorrect
@@ -62,7 +62,7 @@ parse_time(){
     echo "$result"
 }
 
-ask_for_update_interval(){
+_ask_for_update_interval(){
     echo "${GREEN}Time format examples: ${NO_COLOR}"
     echo "${GREEN}1 second -> 1s${NO_COLOR}"
     echo "${GREEN}1 minute -> 1m${NO_COLOR}"
@@ -76,7 +76,7 @@ ask_for_update_interval(){
     do
         echo -n "Please input time interval to update plugins: "
         read -r time_plugin
-        time_plugin_sec=$(parse_time "$time_plugin")
+        time_plugin_sec=$(_parse_time "$time_plugin")
         error="$?"
     done
 
@@ -85,7 +85,7 @@ ask_for_update_interval(){
     do
         echo -n "Please input time interval to update the manager: "
         read -r time_mgr
-        time_mgr_sec=$(parse_time "$time_mgr")
+        time_mgr_sec=$(_parse_time "$time_mgr")
         error="$?"
     done
 }
@@ -102,18 +102,6 @@ _prepend_to_config() {
     _prepend_to_file "$HOME/.zshrc" "$PLUGIN_DIR\n$CONFIG_DIR\n$TIME1\n$TIME2\n\n$SOURCE_FILE\n\n"
 }
 
-# Creates a symbolic link to the package manager file
-_create_symlink() {
-
-    # bash version
-    # local SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-
-    # zsh version
-    local -r SCRIPT_DIR="$( cd -- "$( dirname -- "${(%):-%x}" )" &> /dev/null && pwd )"
-
-    ln -sf "$SCRIPT_DIR/zsh-mgr.zsh" "$ZSH_CONFIG_DIR/zsh-mgr.zsh" 
-}
-
 main(){
     # Check check wether .zshrc exists
     if [ ! -f "$HOME/.zshrc" ]; then
@@ -121,30 +109,25 @@ main(){
         exit 1
     fi
 
-    local final_time_plugin="604800"
-    local final_time_mgr="604800"
-
     # Check if the package manager is going to be installed silently with default options
     if [ "$#" -eq 0 ]; then
         echo "Installing interactively..."
         
         # Interactive install
         _interactive_install
-        ask_for_update_interval
-        final_time_plugin="$time_plugin_sec"
-        final_time_mgr="$time_mgr_sec"
+        _ask_for_update_interval
 
     # Quiet installation
     elif [ "$1" = "-q" ]; then
         echo "Installing quietly..."
     else
-        echo "Unrecognized parameter"
+        echo "${RED}Unrecognized parameter${NO_COLOR}"
         exit 1
     fi
 
     # Create the directories and prepend the lines to the config file
     _create_directories
-    _prepend_to_config "$final_time_plugin" "$final_time_mgr"
+    _prepend_to_config "$time_plugin_sec" "$time_mgr_sec"
 }
 
 main "$@"

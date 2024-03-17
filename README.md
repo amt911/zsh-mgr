@@ -3,6 +3,8 @@
 A simple plugin manager for zsh. Features:
 
 - Auto-updates all plugins.
+- Auto-updates itself.
+- Configurable time interval for both auto-updaters.
 
 ## Installation
 
