@@ -161,9 +161,4 @@ main(){
     echo -e "\n${GREEN}zsh-mgr installed successfully!${NO_COLOR}\nYou can now add plugins to your .zshrc file.\n"
 }
 
-# main "$@"
-
-if _is_mgr_installed;
-then
-    echo "its fast"
-fi
+main "$@"
