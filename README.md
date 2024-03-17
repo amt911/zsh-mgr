@@ -3,6 +3,8 @@
 A simple plugin manager for zsh. Features:
 
 - Auto-updates all plugins.
+- Auto-updates itself.
+- Configurable time interval for both auto-updaters.
 
 ## Installation
 
@@ -11,13 +13,13 @@ A simple plugin manager for zsh. Features:
 First, clone the repository and execute the installation script using the following command:
 
 ```console
-git clone "https://github.com/amt911/zsh-mgr.git" ~/.config/zsh/zsh-mgr && cp ~/.config/zsh/zsh-mgr/install-zsh-mgr.zsh ~ && ~/install-zsh-mgr.zsh && rm ~/install-zsh-mgr.zsh
+git clone "https://github.com/amt911/zsh-mgr.git" ~/.config/zsh/zsh-mgr && ~/.config/zsh/zsh-mgr/install-zsh-mgr.zsh
 ```
 
 If the installation failed for some reason, execute the script again using:
 
 ```console
-~/install-zsh-mgr.zsh && rm ~/install-zsh-mgr.zsh
+~/.config/zsh/zsh-mgr/install-zsh-mgr.zsh
 ```
 
 **Note:** You can add your own scripts to the following location: ```~/.config/zsh/``` and source them in your zsh config file.
@@ -59,17 +61,21 @@ You can add a plugin from a private repository like this:
 add_plugin_private "author/plugin-name" "--flag1 --flag2"
 ```
 
-### Plugins updater
+### Checking ```zsh-mgr``` next update date
 
-Every week, when a new terminal is opened, the plugin manager will update all installed plugins.
+To check for the next zsh-mgr update date, use ```check_mgr_update_date```, or simply use ```ck_mgr_plugin``` to check both zsh-mgr and plugins update date.
+
+### Checking plugins next update date
+
+To check for the next update date of plugins, use ```check_plugins_update_date```, or (once again) use ```ck_mgr_plugin``` to check both.
+
+
+
+## Plugins updater
+
+Every week (or at your set time interval), when a new terminal is opened, the plugin manager will update all installed plugins.
 
 You can force the update process by issuing the following command: ```update_plugins```
-
-Additionally, you can check the next update date by using the command: ```check_plugins_update_date```
-
-And to see zsh-mgr's update date, type: ```check_mgr_update_date```
-
-Finally, to see both update dates at the same time, use: ```ck_mgr_plugin```
 
 ## TODO
 
@@ -81,3 +87,7 @@ The following features are planned to be implemented in the following commits:
 - Change update settings:
   - Disable auto-update.
   - Change updates frequency.
+
+## Finding bugs
+
+If you encounter a bug, please open an issue or create a pull request to solve it. I speak both spanish and english.

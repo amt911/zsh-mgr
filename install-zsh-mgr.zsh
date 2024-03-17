@@ -1,10 +1,10 @@
 #!/bin/zsh
 
-# DEBUG FOR PAK USER: mkdir -p .config/zsh && sudo cp -r /home/andres/zsh-mgr .config/zsh && sudo chown -R pak:pak .config/zsh/zsh-mgr; touch .zshrc && chmod +x .zshrc && sudo cp -r ~andres/.ssh . && sudo chown -R pak:pak .ssh
-
-# Default plugin manager locations
+# Default plugin manager locations and time intervals
 ZSH_PLUGIN_DIR="$HOME/.zsh-plugins"
 readonly ZSH_CONFIG_DIR="$HOME/.config/zsh"
+time_plugin_sec="604800"
+time_mgr_sec="604800"
 
 # Source neccesary functions and exports
 source "$ZSH_CONFIG_DIR/zsh-mgr/zsh-common-variables.zsh"
@@ -14,7 +14,7 @@ _interactive_install() {
     local plugin_dir
 
     # Then, we add new lines to the config file to install the package manager
-    echo -n "Plugins FULL directory (Can use \$HOME and ~) (empty for default directory): " 
+    echo -n "${YELLOW}Plugins FULL directory (Can use \$HOME and ~) (empty for default directory):${NO_COLOR} " 
     read -r plugin_dir
 
     if [ "$plugin_dir" != "" ]; then
@@ -40,53 +40,125 @@ _prepend_to_file() {
     mv "$1"{.new,}
 }
 
+# $1: Time formatted using s,m,h,d,w as seconds, minutes, hours, days and weeks.
+# return: The time in seconds, an error code the format is wrong.
+_parse_time(){
+    local -r TIME="$1"
+
+    # Check if the format is incorrect
+    ! echo "$TIME" | grep -iE "^[1-9]+[0-9]*[smhdw]{1}$" > /dev/null && return 1
+
+    # ${var:offset:length} for substring expansion
+    local -r TIME_MOD="${TIME: -1}"
+    local -r TIME_NUM="${TIME: 0 : -1}"
+
+    local result
+    echo "$TIME_MOD" | grep -iE "[smhdw]" > /dev/null && result="$TIME_NUM"
+    echo "$TIME_MOD" | grep -iE "[mhdw]"  > /dev/null && result=$((result*60))
+    echo "$TIME_MOD" | grep -iE "[hdw]"   > /dev/null && result=$((result*60))
+    echo "$TIME_MOD" | grep -iE "[dw]"    > /dev/null && result=$((result*24))
+    echo "$TIME_MOD" | grep -iE "[w]"     > /dev/null && result=$((result*7))
+
+    echo "$result"
+}
+
+_ask_for_update_interval(){
+    echo "${BRIGHT_CYAN}┌───────────────────────┐${NO_COLOR}"
+    echo "${BRIGHT_CYAN}│ Time format examples  │${NO_COLOR}"
+    echo "${BRIGHT_CYAN}├──────────┬────────────┤${NO_COLOR}"
+    echo "${BRIGHT_CYAN}│ 1 second │     1s     │${NO_COLOR}"
+    echo "${BRIGHT_CYAN}│ 1 minute │     1m     │${NO_COLOR}"
+    echo "${BRIGHT_CYAN}│  1 hour  │     1h     │${NO_COLOR}"
+    echo "${BRIGHT_CYAN}│  1 week  │     1w     │${NO_COLOR}"
+    echo -e "${BRIGHT_CYAN}└───────────────────────┘${NO_COLOR}\n"    
+
+    local error="1"
+    while [ "$error" -ne "0" ]
+    do
+        echo -n "${YELLOW}Please input time interval to update plugins:${NO_COLOR} "
+        read -r time_plugin
+        time_plugin_sec=$(_parse_time "$time_plugin")
+        error="$?"
+    done
+
+    error="1"
+    while [ "$error" -ne "0" ]
+    do
+        echo -n "${YELLOW}Please input time interval to update the manager:${NO_COLOR} "
+        read -r time_mgr
+        time_mgr_sec=$(_parse_time "$time_mgr")
+        error="$?"
+    done
+}
+
+# $1: Plugin time interval
+# $2: Manager time interval
 _prepend_to_config() {
     local -r PLUGIN_DIR="export ZSH_PLUGIN_DIR=\"$ZSH_PLUGIN_DIR\""
     local -r CONFIG_DIR="export ZSH_CONFIG_DIR=\"\$HOME/.config/zsh\""
-    local -r TIME1="export TIME_THRESHOLD=604800"
-    local -r TIME2="export TIME_THRESHOLD=604800"
+    local -r TIME1="export TIME_THRESHOLD=$1"
+    local -r TIME2="export MGR_TIME_THRESHOLD=$2"
     local -r SOURCE_FILE="source \$ZSH_CONFIG_DIR/zsh-mgr/zsh-mgr.zsh"
 
     _prepend_to_file "$HOME/.zshrc" "$PLUGIN_DIR\n$CONFIG_DIR\n$TIME1\n$TIME2\n\n$SOURCE_FILE\n\n"
 }
 
-# Creates a symbolic link to the package manager file
-_create_symlink() {
+# Detects if zsh-mgr has been installed.
+# return: 0 if it is installed (no errors), 1 otherwise.
+_is_mgr_installed(){
+    local -r WORDS=("export ZSH_PLUGIN_DIR=" "export ZSH_CONFIG_DIR" "export TIME_THRESHOLD=" "export MGR_TIME_THRESHOLD=" "source \$ZSH_CONFIG_DIR/zsh-mgr/zsh-mgr.zsh")
 
-    # bash version
-    # local SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+    local result=1
 
-    # zsh version
-    local -r SCRIPT_DIR="$( cd -- "$( dirname -- "${(%):-%x}" )" &> /dev/null && pwd )"
+    # Iterates over all the lines this scripts creates on .zshrc
+    local i
+    for i in "${WORDS[@]}"
+    do
+        if grep -E "^$i" "$HOME/.zshrc" > /dev/null;
+        then
+            result=0
+            break
+        fi
+    done
+    unset i
 
-    ln -sf "$SCRIPT_DIR/zsh-mgr.zsh" "$ZSH_CONFIG_DIR/zsh-mgr.zsh" 
+    return "$result"
 }
 
+main(){
+    # Check check wether .zshrc exists
+    if [ ! -f "$HOME/.zshrc" ]; then
+        echo "${BRIGHT_CYAN}Creating .zshrc file...${NO_COLOR}"
+        touch "$HOME/.zshrc"
+    fi
 
-# Check check wether .zshrc exists
-if [ ! -f "$HOME/.zshrc" ]; then
-    echo -e "$RED.zshrc file does not exist!$NO_COLOR \nPlease, create one."
-    exit 1
-fi
+    if _is_mgr_installed;
+    then
+        echo "${RED}zsh-mgr has been installed or partially installed, exiting...${NO_COLOR}"
+        exit 1
+    fi
 
+    # Check if the package manager is going to be installed silently with default options
+    if [ "$#" -eq 0 ]; then
+        echo "Installing interactively..."
+        
+        # Interactive install
+        _interactive_install
+        _ask_for_update_interval
 
-# Check if the package manager is going to be installed silently with default options
-if [ "$#" -eq 0 ]; then
-    echo "Installing interactively..."
-    
-    # Interactive install
-    _interactive_install
+    # Quiet installation
+    elif [ "$1" = "-q" ]; then
+        echo "Installing quietly..."
+    else
+        echo "${RED}Unrecognized parameter${NO_COLOR}"
+        exit 1
+    fi
 
-# Quiet installation
-elif [ "$1" = "-q" ]; then
-    echo "Installing quietly..."
-else
-    echo "Unrecognized parameter"
-    exit 1
-fi
+    # Create the directories and prepend the lines to the config file
+    _create_directories
+    _prepend_to_config "$time_plugin_sec" "$time_mgr_sec"
 
+    echo -e "\n${GREEN}zsh-mgr installed successfully!${NO_COLOR}\nYou can now add plugins to your .zshrc file.\n"
+}
 
-# Create the directories and prepend the lines to the config file
-_create_directories
-_prepend_to_config
-# _create_symlink
+main "$@"
