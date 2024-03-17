@@ -63,18 +63,19 @@ _parse_time(){
 }
 
 _ask_for_update_interval(){
-    echo "${GREEN}Time format examples: ${NO_COLOR}"
-    echo "${GREEN}1 second -> 1s${NO_COLOR}"
-    echo "${GREEN}1 minute -> 1m${NO_COLOR}"
-    echo "${GREEN}1 hour   -> 1h${NO_COLOR}"
-    echo "${GREEN}1 week   -> 1w${NO_COLOR}"
-    echo -e "${GREEN}############################################${NO_COLOR}\n"
-    
+    echo "${BRIGHT_CYAN}┌───────────────────────┐${NO_COLOR}"
+    echo "${BRIGHT_CYAN}│ Time format examples  │${NO_COLOR}"
+    echo "${BRIGHT_CYAN}├──────────┬────────────┤${NO_COLOR}"
+    echo "${BRIGHT_CYAN}│ 1 second │     1s     │${NO_COLOR}"
+    echo "${BRIGHT_CYAN}│ 1 minute │     1m     │${NO_COLOR}"
+    echo "${BRIGHT_CYAN}│  1 hour  │     1h     │${NO_COLOR}"
+    echo "${BRIGHT_CYAN}│  1 week  │     1w     │${NO_COLOR}"
+    echo -e "${BRIGHT_CYAN}└───────────────────────┘${NO_COLOR}\n"    
 
     local error="1"
     while [ "$error" -ne "0" ]
     do
-        echo -n "Please input time interval to update plugins: "
+        echo -n "${YELLOW}Please input time interval to update plugins:${NO_COLOR} "
         read -r time_plugin
         time_plugin_sec=$(_parse_time "$time_plugin")
         error="$?"
@@ -83,7 +84,7 @@ _ask_for_update_interval(){
     error="1"
     while [ "$error" -ne "0" ]
     do
-        echo -n "Please input time interval to update the manager: "
+        echo -n "${YELLOW}Please input time interval to update the manager:${NO_COLOR} "
         read -r time_mgr
         time_mgr_sec=$(_parse_time "$time_mgr")
         error="$?"
@@ -105,9 +106,8 @@ _prepend_to_config() {
 main(){
     # Check check wether .zshrc exists
     if [ ! -f "$HOME/.zshrc" ]; then
-        # echo -e "$RED.zshrc file does not exist!$NO_COLOR \nPlease, create one."
-        # exit 1
-        echo "${CYAN}Creating .zshrc file...${NO_COLOR}"
+        echo "${BRIGHT_CYAN}Creating .zshrc file...${NO_COLOR}"
+        touch "$HOME/.zshrc"
     fi
 
     # Check if the package manager is going to be installed silently with default options
@@ -130,7 +130,7 @@ main(){
     _create_directories
     _prepend_to_config "$time_plugin_sec" "$time_mgr_sec"
 
-    echo "${GREEN}zsh-mgr installed successfully!${NO_COLOR} You can now add plugins to your .zshrc file."
+    echo -e "${GREEN}zsh-mgr installed successfully!${NO_COLOR}\nYou can now add plugins to your .zshrc file.\n"
 }
 
 main "$@"
