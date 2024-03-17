@@ -105,8 +105,9 @@ _prepend_to_config() {
 main(){
     # Check check wether .zshrc exists
     if [ ! -f "$HOME/.zshrc" ]; then
-        echo -e "$RED.zshrc file does not exist!$NO_COLOR \nPlease, create one."
-        exit 1
+        # echo -e "$RED.zshrc file does not exist!$NO_COLOR \nPlease, create one."
+        # exit 1
+        echo "${CYAN}Creating .zshrc file...${NO_COLOR}"
     fi
 
     # Check if the package manager is going to be installed silently with default options
@@ -128,6 +129,8 @@ main(){
     # Create the directories and prepend the lines to the config file
     _create_directories
     _prepend_to_config "$time_plugin_sec" "$time_mgr_sec"
+
+    echo "${GREEN}zsh-mgr installed successfully!${NO_COLOR} You can now add plugins to your .zshrc file."
 }
 
 main "$@"
