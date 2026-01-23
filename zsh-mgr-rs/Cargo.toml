@@ -1,0 +1,45 @@
+[package]
+name = "zsh-mgr-rs"
+version = "0.0.1"
+edition = "2024"
+authors = ["amt911"]
+
+# Optimizaciones para binarios de producción
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+[dependencies]
+# Git operations (libgit2 bindings - maduro y rápido)
+git2 = "0.20.2"
+
+# Serialización JSON para comunicación con ZSH
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.145"
+
+# CLI argument parsing
+clap = { version = "4.5", features = ["derive"] }
+
+# Paralelización eficiente
+rayon = "1.8"
+
+# Manejo de errores ergonómico
+anyhow = "1.0"
+
+# Timestamps y filesystem
+filetime = "0.2"
+walkdir = "2.4"
+
+# Logging (opcional, para debugging)
+env_logger = "0.11"
+log = "0.4"
+
+# Colores en terminal
+colored = "3.0.0"
+
+# Compilar múltiples binarios desde src/bin/
+[[bin]]
+name = "parallel-git-update"
+path = "src/parallel-git-update.rs"
