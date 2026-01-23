@@ -7,10 +7,10 @@
 # ============================================================================
 
 # Ruta al binario compilado
-PARALLEL_GIT_UPDATE="${HOME}/.zshpc/.config/zsh/zsh-mgr-rs/target/release/parallel-git-update"
+PARALLEL_GIT_UPDATE="${HOME}/.zshpc/.config/zsh/zsh-mgr/zsh-mgr-rs/target/release/parallel-git-update"
 
 # Directorio base donde están los repositorios a actualizar
-ZSH_PLUGINS_DIR="${HOME}/.zshpc/.config/zsh/plugins"
+ZSH_PLUGINS_DIR="${HOME}/.zsh-plugins"
 ZSH_THEMES_DIR="${HOME}/.zshpc/.config/zsh/themes"
 
 # ============================================================================
@@ -21,6 +21,7 @@ ZSH_THEMES_DIR="${HOME}/.zshpc/.config/zsh/themes"
 update_all_repos() {
     local repos=()
     local verbose_flag=""
+    local quiet_flag="--quiet"  # Por defecto en modo quiet (sin JSON)
 
     # Encontrar todos los repositorios Git
     while IFS= read -r repo_dir; do
@@ -35,16 +36,16 @@ update_all_repos() {
 
     # Modo verbose si se pasa -v
     [[ "$1" == "-v" || "$1" == "--verbose" ]] && verbose_flag="--verbose"
-
-    echo "🚀 Actualizando ${#repos[@]} repositorios en paralelo..."
-    echo ""
+    
+    # Mostrar JSON si se pasa --json
+    [[ "$1" == "--json" ]] && quiet_flag=""
 
     # Ejecutar actualización paralela
     if [[ -x "$PARALLEL_GIT_UPDATE" ]]; then
-        "$PARALLEL_GIT_UPDATE" "${repos[@]}" $verbose_flag --pretty
+        "$PARALLEL_GIT_UPDATE" "${repos[@]}" $verbose_flag $quiet_flag
     else
         echo "❌ Error: Binario no encontrado o no ejecutable: $PARALLEL_GIT_UPDATE"
-        echo "💡 Ejecuta: cd ~/.zshpc/.config/zsh/zsh-mgr-rs && cargo build --release"
+        echo "💡 Ejecuta: cd ~/.zshpc/.config/zsh/zsh-mgr/zsh-mgr-rs && cargo build --release"
         return 1
     fi
 }
@@ -59,8 +60,7 @@ update_plugins() {
 
     [[ ${#repos[@]} -eq 0 ]] && { echo "❌ No plugins encontrados"; return 1; }
 
-    echo "🔌 Actualizando ${#repos[@]} plugins..."
-    "$PARALLEL_GIT_UPDATE" "${repos[@]}" --pretty
+    "$PARALLEL_GIT_UPDATE" "${repos[@]}" --quiet
 }
 
 # Actualizar solo temas
@@ -73,8 +73,7 @@ update_themes() {
 
     [[ ${#repos[@]} -eq 0 ]] && { echo "❌ No themes encontrados"; return 1; }
 
-    echo "🎨 Actualizando ${#repos[@]} temas..."
-    "$PARALLEL_GIT_UPDATE" "${repos[@]}" --pretty
+    "$PARALLEL_GIT_UPDATE" "${repos[@]}" --quiet
 }
 
 # Actualizar con análisis JSON

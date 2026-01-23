@@ -36,6 +36,10 @@ struct Args {
     /// Verbose output
     #[arg(short, long)]
     verbose: bool,
+
+    /// Quiet mode - don't output JSON (only summary)
+    #[arg(short, long)]
+    quiet: bool,
 }
 
 // ============================================================================
@@ -567,6 +571,9 @@ struct BatchUpdateResults {
 // ============================================================================
 
 fn main() -> Result<()> {
+    // Print initial newline for better prompt spacing
+    eprintln!();
+    
     let args = Args::parse();
 
     // Initialize logger
@@ -622,11 +629,13 @@ fn main() -> Result<()> {
     );
     eprintln!("{}", "=".repeat(60).blue());
 
-    // Output JSON to stdout
-    if args.pretty {
-        println!("{}", serde_json::to_string_pretty(&results)?);
-    } else {
-        println!("{}", serde_json::to_string(&results)?);
+    // Output JSON to stdout (unless quiet mode)
+    if !args.quiet {
+        if args.pretty {
+            println!("{}", serde_json::to_string_pretty(&results)?);
+        } else {
+            println!("{}", serde_json::to_string(&results)?);
+        }
     }
 
     // Exit with error code if any failed
