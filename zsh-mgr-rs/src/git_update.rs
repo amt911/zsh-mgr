@@ -307,7 +307,7 @@ fn main() -> Result<()> {
     // Check whether a repository path is provided
     anyhow::ensure!(args.repo.exists(), "No repository specified");
 
-    let credentials = CredentialManager { };
+    let credentials = CredentialManager::default();
     let mut repo_updater = RepoUpdater::new(args.repo, credentials)?;
     repo_updater.run()?;
     Ok(())
