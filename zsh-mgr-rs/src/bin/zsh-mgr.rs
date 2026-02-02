@@ -101,6 +101,20 @@ enum Commands {
         #[arg(short, long)]
         zshrc: Option<String>,
     },
+    
+    /// Sync plugins.json from installed Git repositories
+    Sync {
+        /// Force regeneration even if plugins.json exists
+        #[arg(short, long)]
+        force: bool,
+    },
+    
+    /// Install plugins from default-plugins.txt
+    Bootstrap {
+        /// Path to plugins file (default: ~/.config/zsh/default-plugins.txt)
+        #[arg(short, long)]
+        file: Option<String>,
+    },
 }
 
 fn main() -> Result<()> {
@@ -129,6 +143,12 @@ fn main() -> Result<()> {
         }
         Commands::Init { zshrc } => {
             init::run(zshrc)
+        }
+        Commands::Sync { force } => {
+            sync::run(force)
+        }
+        Commands::Bootstrap { file } => {
+            bootstrap::run(file)
         }
     }
 }

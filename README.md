@@ -2,12 +2,15 @@
 
 A modern, fast plugin manager for ZSH written entirely in Rust. Features:
 
-- ✅ **Parallel updates** - Update all plugins simultaneously
-- ✅ **Real-time progress** - See what's happening with each plugin
-- ✅ **Automatic management** - Auto-updates on schedule
+- ✅ **Parallel updates** - Update all plugins simultaneously using Rayon
+- ✅ **Real-time progress** - Beautiful tables showing update status  
+- ✅ **Non-blocking auto-updates** - Runs in background, won't slow shell startup
+- ✅ **Auto-recovery** - Recreates plugins.json if deleted (~19ms)
+- ✅ **Manual control** - Explicit plugin loading in .zshrc
+- ✅ **Bootstrap** - Install default plugins automatically
+- ✅ **Smart sync** - Detects plugins from Git repositories
 - ✅ **Clean CLI** - Simple, intuitive commands
 - ✅ **Fast** - Written in Rust for maximum performance
-- ✅ **Smart detection** - Works with system packages or local builds
 
 ## Installation
 
@@ -51,6 +54,32 @@ zsh-mgr install
 
 ## Usage
 
+### Bootstrap default plugins
+
+Install all plugins from `~/.config/zsh/default-plugins.txt`:
+
+```console
+zsh-mgr bootstrap
+```
+
+### Generate .zshrc plugin loading code
+
+```console
+zsh-mgr init
+```
+
+Automatically adds `load_plugin` lines to your .zshrc based on installed plugins.
+
+### Sync plugins.json from Git repositories
+
+If plugins.json is deleted or corrupted, recreate it:
+
+```console
+zsh-mgr sync
+```
+
+This scans `~/.zsh-plugins/` for Git repositories and rebuilds the database (~19ms).
+
 ### Add a plugin
 
 ```console
@@ -60,7 +89,7 @@ zsh-mgr add zsh-users/zsh-autosuggestions
 ### Add with custom flags
 
 ```console
-zsh-mgr add zsh-users/zsh-syntax-highlighting --flags="--depth=1"
+zsh-mgr add romkatv/powerlevel10k --flags="--depth 1"
 ```
 
 ### Add a plugin from a private repository
@@ -75,7 +104,7 @@ zsh-mgr add your-user/private-repo --private
 zsh-mgr update
 ```
 
-Updates all plugins in parallel. The system will show real-time progress for each repository.
+Updates all plugins in parallel using Rayon. Non-blocking when run via auto-update.
 
 ### Update specific plugins
 
@@ -89,17 +118,7 @@ zsh-mgr update --only plugin1 --only plugin2
 zsh-mgr check
 ```
 
-Shows a beautiful table with update information:
-
-```
-╔════════════════════════════════════════════════════════════╗
-║ Name                    │ Next Update        │ Status      ║
-╠════════════════════════════════════════════════════════════╣
-║ zsh-autosuggestions     │ 2024-01-30 10:00   │ ✓ Current   ║
-║ zsh-syntax-highlighting │ 2024-01-29 15:30   │ ⏰ Soon     ║
-║ powerlevel10k           │ 2024-01-25 08:00   │ ⚠ Update   ║
-╚════════════════════════════════════════════════════════════╝
-```
+Shows a beautiful table with update information using comfy-table.
 
 ### List installed plugins
 
@@ -115,16 +134,19 @@ zsh-mgr remove plugin-name
 
 ## Performance
 
-zsh-mgr uses Rust and parallel processing to update multiple repositories simultaneously. This provides:
-
-- **Fast updates**: All plugins update in parallel
-- **Efficient**: Uses system resources optimally
-- **Safe**: Proper error handling and stash management
-- **Reliable**: Handles authentication (SSH keys, agents) automatically
+- **Parallel updates**: All plugins update simultaneously using Rayon
+- **Non-blocking**: Auto-updates run in background without blocking shell startup
+- **Fast recovery**: plugins.json recreation takes ~19ms for 7 plugins
+- **Efficient**: Optimal resource usage with thread pools
+- **Safe**: Proper error handling and Git stash management
+- **Smart auth**: Automatic SSH key and agent detection
 
 ## Configuration
 
-Configuration is automatically created during installation. You can customize:
+- **plugins.json**: Located at `~/.zsh-plugins/plugins.json`
+- **Auto-recovery**: Automatically recreated if deleted
+- **Default plugins**: Define in `~/.config/zsh/default-plugins.txt`
+- **Update threshold**: Default 7 days (604800 seconds)
 
 - `ZSH_PLUGIN_DIR`: Where plugins are installed (default: `~/.zsh-plugins`)
 - `ZSH_CONFIG_DIR`: Configuration directory (default: `~/.config/zsh`)
