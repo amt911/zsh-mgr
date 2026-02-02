@@ -94,6 +94,13 @@ enum Commands {
         #[arg(short, long)]
         quiet: bool,
     },
+    
+    /// Generate plugin loading code for .zshrc
+    Init {
+        /// Path to .zshrc file (default: ~/.zshrc)
+        #[arg(short, long)]
+        zshrc: Option<String>,
+    },
 }
 
 fn main() -> Result<()> {
@@ -119,6 +126,9 @@ fn main() -> Result<()> {
         }
         Commands::Install { plugin_dir, time_threshold, mgr_time_threshold, quiet } => {
             install::run(plugin_dir, time_threshold, mgr_time_threshold, quiet)
+        }
+        Commands::Init { zshrc } => {
+            init::run(zshrc)
         }
     }
 }

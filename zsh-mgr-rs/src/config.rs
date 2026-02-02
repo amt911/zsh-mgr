@@ -63,7 +63,9 @@ impl Config {
     
     /// Get timestamp file for a plugin
     pub fn timestamp_file(&self, plugin_name: &str) -> PathBuf {
-        self.plugin_dir.join(format!(".{}", plugin_name))
+        // Extract just the repo name (after last '/')
+        let repo_name = plugin_name.split('/').last().unwrap_or(plugin_name);
+        self.plugin_dir.join(format!(".{}", repo_name))
     }
     
     /// Get manager timestamp file
