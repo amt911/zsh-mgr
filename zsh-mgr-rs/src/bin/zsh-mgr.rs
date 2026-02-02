@@ -21,7 +21,7 @@ enum Commands {
         plugin: String,
         
         /// Git clone flags
-        #[arg(short, long)]
+        #[arg(short, long, allow_hyphen_values = true)]
         flags: Option<String>,
         
         /// Private repository (use SSH)
