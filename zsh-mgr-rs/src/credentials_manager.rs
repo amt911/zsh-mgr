@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 /// Manages authentication credentials for Git operations
 /// Follows OOP principles with encapsulated credential logic
+#[derive(Clone)]
 pub struct CredentialManager {
     home_dir: PathBuf,
 }
