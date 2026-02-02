@@ -64,6 +64,10 @@ enum Commands {
         /// Output as JSON
         #[arg(short, long)]
         json: bool,
+        
+        /// Output only plugin names (one per line)
+        #[arg(short, long)]
+        names_only: bool,
     },
     
     /// Remove a plugin
@@ -132,8 +136,8 @@ fn main() -> Result<()> {
         Commands::Check { plugins, manager, json } => {
             check::run(plugins, manager, json)
         }
-        Commands::List { json } => {
-            list::run(json)
+        Commands::List { json, names_only } => {
+            list::run(json, names_only)
         }
         Commands::Remove { plugin, force } => {
             remove::run(plugin, force)
