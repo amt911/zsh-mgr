@@ -1,8 +1,9 @@
 use clap::Parser;
 use log::info;
 use std::path::PathBuf;
-use git2::{AutotagOption, Cred, CredentialType, Error, FetchOptions, Remote, Repository};
+use git2::{AutotagOption, Error, FetchOptions, Remote, Repository};
 use anyhow::Result;
+use std::sync::Arc;
 
 use crate::credentials_manager::CredentialManager;
 
@@ -19,26 +20,14 @@ struct Args {
 
 pub struct RepoUpdater {
     // repo_path: PathBuf,
-    credentials: CredentialManager,
+    credentials: Arc<CredentialManager>,
     repo: Repository,
 }
 
 impl RepoUpdater {
-    fn new(repo_path: PathBuf, credentials: CredentialManager) -> Result<Self, git2::Error> {
+    pub fn new(repo_path: PathBuf, credentials: Arc<CredentialManager>) -> Result<Self, git2::Error> {
         let repo = Repository::open(&repo_path)?;
         Ok(Self { credentials, repo })
-    }
-
-    /// Public method to update a repository from external modules
-    pub fn update_repository(repo_path: PathBuf, credentials: std::sync::Arc<CredentialManager>) -> Result<String> {
-        let credentials_owned = (*credentials).clone();
-        let mut updater = Self::new(repo_path, credentials_owned)
-            .map_err(|e| anyhow::anyhow!("Failed to open repository: {}", e))?;
-        
-        updater.run()
-            .map_err(|e| anyhow::anyhow!("Failed to update repository: {}", e))?;
-        
-        Ok("Updated successfully".to_string())
     }
 
     fn do_fetch<'repo>(
@@ -199,13 +188,39 @@ impl RepoUpdater {
                 }
             };
         } else if analysis.0.is_normal() {
-            // do a normal merge
-            let head_commit = self.repo.reference_to_annotated_commit(&self.repo.head()?)?;
-            self.normal_merge(&head_commit, &fetch_commit)?;
+            // For shallow repos, normal merge may fail because there's no merge base.
+            // In that case, force-reset the branch to the fetched commit.
+            if self.is_shallow() {
+                println!("Shallow repository detected — force-resetting to fetched commit");
+                let refname = format!("refs/heads/{}", remote_branch);
+                match self.repo.find_reference(&refname) {
+                    Ok(mut r) => {
+                        let msg = format!("Shallow update: resetting {} to {}", refname, fetch_commit.id());
+                        r.set_target(fetch_commit.id(), &msg)?;
+                        self.repo.set_head(&refname)?;
+                        self.repo.checkout_head(Some(
+                            git2::build::CheckoutBuilder::default().force(),
+                        ))?;
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to find reference {}: {}", refname, e);
+                        return Err(e);
+                    }
+                }
+            } else {
+                // do a normal merge
+                let head_commit = self.repo.reference_to_annotated_commit(&self.repo.head()?)?;
+                self.normal_merge(&head_commit, &fetch_commit)?;
+            }
         } else {
             println!("Nothing to do...");
         }
         Ok(())
+    }
+
+    /// Check if the repository is a shallow clone
+    fn is_shallow(&self) -> bool {
+        self.repo.is_shallow()
     }
 
     fn get_current_branch(&self) -> Result<String, Error> {
@@ -277,7 +292,7 @@ impl RepoUpdater {
         }
     }
 
-    fn run(&mut self) -> Result<(), Error> {
+    pub fn run(&mut self) -> Result<(), Error> {
         let current_branch = self.get_current_branch()?;
 
         info!("Current branch: {}", current_branch);
@@ -317,7 +332,7 @@ fn main() -> Result<()> {
     // Check whether a repository path is provided
     anyhow::ensure!(args.repo.exists(), "No repository specified");
 
-    let credentials = CredentialManager::default();
+    let credentials = Arc::new(CredentialManager::default());
     let mut repo_updater = RepoUpdater::new(args.repo, credentials)?;
     repo_updater.run()?;
     Ok(())

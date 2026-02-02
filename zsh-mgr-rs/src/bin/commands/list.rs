@@ -2,7 +2,7 @@ use anyhow::Result;
 use colored::Colorize;
 use zsh_mgr_rs::config::{Config, PluginList};
 
-pub fn run(json: bool) -> Result<()> {
+pub fn run(json: bool, names_only: bool) -> Result<()> {
     let config = Config::load()?;
     let plugin_list = PluginList::load(&config)?;
     
@@ -13,7 +13,13 @@ pub fn run(json: bool) -> Result<()> {
         return Ok(());
     }
     
-    if json {
+    if names_only {
+        // Output only the plugin names (repo name after last '/')
+        for plugin in plugins {
+            let repo_name = plugin.name.split('/').last().unwrap_or(&plugin.name);
+            println!("{}", repo_name);
+        }
+    } else if json {
         println!("{}", serde_json::to_string_pretty(&plugins)?);
     } else {
         println!("{} Installed plugins:", "📦".cyan());

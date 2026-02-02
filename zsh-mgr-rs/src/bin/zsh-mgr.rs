@@ -21,7 +21,7 @@ enum Commands {
         plugin: String,
         
         /// Git clone flags
-        #[arg(short, long)]
+        #[arg(short, long, allow_hyphen_values = true)]
         flags: Option<String>,
         
         /// Private repository (use SSH)
@@ -64,6 +64,10 @@ enum Commands {
         /// Output as JSON
         #[arg(short, long)]
         json: bool,
+        
+        /// Output only plugin names (one per line)
+        #[arg(short, long)]
+        names_only: bool,
     },
     
     /// Remove a plugin
@@ -94,6 +98,27 @@ enum Commands {
         #[arg(short, long)]
         quiet: bool,
     },
+    
+    /// Generate plugin loading code for .zshrc
+    Init {
+        /// Path to .zshrc file (default: ~/.zshrc)
+        #[arg(short, long)]
+        zshrc: Option<String>,
+    },
+    
+    /// Sync plugins.json from installed Git repositories
+    Sync {
+        /// Force regeneration even if plugins.json exists
+        #[arg(short, long)]
+        force: bool,
+    },
+    
+    /// Install plugins from default-plugins.txt
+    Bootstrap {
+        /// Path to plugins file (default: ~/.config/zsh/default-plugins.txt)
+        #[arg(short, long)]
+        file: Option<String>,
+    },
 }
 
 fn main() -> Result<()> {
@@ -111,14 +136,23 @@ fn main() -> Result<()> {
         Commands::Check { plugins, manager, json } => {
             check::run(plugins, manager, json)
         }
-        Commands::List { json } => {
-            list::run(json)
+        Commands::List { json, names_only } => {
+            list::run(json, names_only)
         }
         Commands::Remove { plugin, force } => {
             remove::run(plugin, force)
         }
         Commands::Install { plugin_dir, time_threshold, mgr_time_threshold, quiet } => {
             install::run(plugin_dir, time_threshold, mgr_time_threshold, quiet)
+        }
+        Commands::Init { zshrc } => {
+            init::run(zshrc)
+        }
+        Commands::Sync { force } => {
+            sync::run(force)
+        }
+        Commands::Bootstrap { file } => {
+            bootstrap::run(file)
         }
     }
 }

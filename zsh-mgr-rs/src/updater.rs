@@ -72,28 +72,44 @@ impl BatchUpdater {
             eprintln!("{} Updating {}...", "🔄".cyan(), path.display());
         }
         
-        match RepoUpdater::update_repository(path.clone(), self.credentials.clone()) {
-            Ok(msg) => {
-                let duration = start.elapsed().as_secs_f64();
-                if !self.config.quiet {
-                    eprintln!("{} {} - {}", "✓".green(), path.display(), msg);
-                }
-                UpdateResult {
-                    path,
-                    success: true,
-                    message: msg,
-                    duration,
+        match RepoUpdater::new(path.clone(), self.credentials.clone()) {
+            Ok(mut updater) => {
+                match updater.run() {
+                    Ok(_) => {
+                        let duration = start.elapsed().as_secs_f64();
+                        if !self.config.quiet {
+                            eprintln!("{} {} - Updated successfully", "✓".green(), path.display());
+                        }
+                        UpdateResult {
+                            path,
+                            success: true,
+                            message: "Updated successfully".to_string(),
+                            duration,
+                        }
+                    }
+                    Err(e) => {
+                        let duration = start.elapsed().as_secs_f64();
+                        if !self.config.quiet {
+                            eprintln!("{} {} - {}", "✗".red(), path.display(), e);
+                        }
+                        UpdateResult {
+                            path,
+                            success: false,
+                            message: e.to_string(),
+                            duration,
+                        }
+                    }
                 }
             }
             Err(e) => {
                 let duration = start.elapsed().as_secs_f64();
                 if !self.config.quiet {
-                    eprintln!("{} {} - {}", "✗".red(), path.display(), e);
+                    eprintln!("{} {} - Failed to open repository: {}", "✗".red(), path.display(), e);
                 }
                 UpdateResult {
                     path,
                     success: false,
-                    message: e.to_string(),
+                    message: format!("Failed to open repository: {}", e),
                     duration,
                 }
             }
