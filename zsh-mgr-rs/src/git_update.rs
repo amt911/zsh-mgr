@@ -1,8 +1,9 @@
 use clap::Parser;
 use log::info;
 use std::path::PathBuf;
-use git2::{AutotagOption, Cred, CredentialType, Error, FetchOptions, Remote, Repository};
+use git2::{AutotagOption, Error, FetchOptions, Remote, Repository};
 use anyhow::Result;
+use std::sync::Arc;
 
 use crate::credentials_manager::CredentialManager;
 
@@ -19,26 +20,14 @@ struct Args {
 
 pub struct RepoUpdater {
     // repo_path: PathBuf,
-    credentials: CredentialManager,
+    credentials: Arc<CredentialManager>,
     repo: Repository,
 }
 
 impl RepoUpdater {
-    fn new(repo_path: PathBuf, credentials: CredentialManager) -> Result<Self, git2::Error> {
+    pub fn new(repo_path: PathBuf, credentials: Arc<CredentialManager>) -> Result<Self, git2::Error> {
         let repo = Repository::open(&repo_path)?;
         Ok(Self { credentials, repo })
-    }
-
-    /// Public method to update a repository from external modules
-    pub fn update_repository(repo_path: PathBuf, credentials: std::sync::Arc<CredentialManager>) -> Result<String> {
-        let credentials_owned = (*credentials).clone();
-        let mut updater = Self::new(repo_path, credentials_owned)
-            .map_err(|e| anyhow::anyhow!("Failed to open repository: {}", e))?;
-        
-        updater.run()
-            .map_err(|e| anyhow::anyhow!("Failed to update repository: {}", e))?;
-        
-        Ok("Updated successfully".to_string())
     }
 
     fn do_fetch<'repo>(
@@ -277,7 +266,7 @@ impl RepoUpdater {
         }
     }
 
-    fn run(&mut self) -> Result<(), Error> {
+    pub fn run(&mut self) -> Result<(), Error> {
         let current_branch = self.get_current_branch()?;
 
         info!("Current branch: {}", current_branch);
@@ -317,7 +306,7 @@ fn main() -> Result<()> {
     // Check whether a repository path is provided
     anyhow::ensure!(args.repo.exists(), "No repository specified");
 
-    let credentials = CredentialManager::default();
+    let credentials = Arc::new(CredentialManager::default());
     let mut repo_updater = RepoUpdater::new(args.repo, credentials)?;
     repo_updater.run()?;
     Ok(())
