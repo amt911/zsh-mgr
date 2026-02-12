@@ -162,32 +162,32 @@ _color_row_on_date(){
     local -r COL_NUM=$(_get_column_length "$ROW" "$DELIM")
     local -r DATE_ROW=$(_get_column_text_at "$ROW" "$COL_NUM" "$DELIM")
     local -r DATE_DIFF=$(( DATE_TODAY - DATE_ROW ))
+    local -r NEXT_DATE=$(( DATE_ROW + THRESHOLD ))
     local color_res
+    local output_row
 
-    # echo "$ROW / $DELIM / $THRESHOLD / $DATE_TODAY / $COL_NUM / $DATE_ROW / $DATE_DIFF"
+    # If bc does not exist, then we leave the output the same
+    if ! check_cmd_exists "bc";
+    then
+        output_row=$(_change_column_entry "$ROW" "$COL_NUM" "$(date -d @"$NEXT_DATE" "+%d-%m-%Y %H:%M:%S")" "$DELIM")
+        echo "$output_row"
+        return 1
+    fi
 
-    # if [ "$DATE_DIFF" -lt $(( 0.25 * THRESHOLD )) ];
     if (( $(echo "$DATE_DIFF < $(echo "0.25*$THRESHOLD" | bc -l)" | bc -l) ));
     then
         color_res="$GREEN"    
-        # echo "$DATE_DIFF < $(echo "0.25*$THRESHOLD" | bc -l)" | bc -l
-        # echo "Es menos del 25% -> $DATE_DIFF -> $(echo "0.25*$THRESHOLD" | bc -l)"
-    
     elif (( $(echo "$DATE_DIFF < $(echo "0.75*$THRESHOLD" | bc -l)" | bc -l) ));
     then
         color_res="$YELLOW"
-        # echo "$DATE_DIFF < $(echo "0.75*$THRESHOLD" | bc -l)" | bc -l
-        # echo "Es menos del 75% -> $DATE_DIFF -> $(echo "0.75*$THRESHOLD" | bc -l)"
     else
         color_res="$RED"
-        # echo "Ya debería actualizar -> $DATE_DIFF -> $THRESHOLD"
     fi
 
     # IT NEEDS TO ADD THE THRESHOLD TO THE CURRENT DATE
-    local -r NEXT_DATE=$(( DATE_ROW + THRESHOLD ))
-    local -r OUTPUT_ROW=$(_color_row "$(_change_column_entry "$ROW" "$COL_NUM" "$(date -d @"$NEXT_DATE" "+%d-%m-%Y %H:%M:%S")" "$DELIM")" "$DELIM" "$color_res")
+    output_row=$(_color_row "$(_change_column_entry "$ROW" "$COL_NUM" "$(date -d @"$NEXT_DATE" "+%d-%m-%Y %H:%M:%S")" "$DELIM")" "$DELIM" "$color_res")
 
-    echo "$OUTPUT_ROW"
+    echo "$output_row"
 }
 
 # $1: 
@@ -214,14 +214,101 @@ _check_comp_update_date(){
     local -r LEGEND="${6:-yes}"
     local -r TST_DIR="${7:-$ZSH_PLUGIN_DIR}"
     local -r TST_FILE_LOC="$(_from_repo_to_time_file "$REPO_LOC" "$TST_DIR")"
+    local raw_msg
+    local colored_msg
 
-
-    local raw_msg="$COMP_NAME#$(date -d @"$(( $(cat "$TST_FILE_LOC") + THRESHOLD ))" "+%d-%m-%Y %H:%M:%S" )"
-    local colored_msg=$(_color_row_on_date "$COMP_NAME#$(cat "$TST_FILE_LOC")" "#" "$THRESHOLD")
+    if [ ! -f "$TST_FILE_LOC" ];
+    then
+        raw_msg="$COMP_NAME#unknown"        
+        colored_msg="$raw_msg"
+    else
+        raw_msg="$COMP_NAME#$(date -d @"$(( $(cat "$TST_FILE_LOC") + THRESHOLD ))" "+%d-%m-%Y %H:%M:%S" )"
+        colored_msg=$(_color_row_on_date "$COMP_NAME#$(cat "$TST_FILE_LOC")" "#" "$THRESHOLD")
+    fi
 
     _create_table "$FIRST_ROW\n$raw_msg" "#" "$TABLE_COLOR" "$FIRST_ROW\n$colored_msg"
 
     [ "$LEGEND" = "yes" ] && _display_color_legend 
 
     return 0    
+}
+
+# Auto-updater for plugins.
+# 
+# $1: The name of the plugin.
+_auto_update_plugin(){
+    local -r PLUGIN_NAME="$1"
+    local -r REPO_LOC="$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
+
+    _generic_auto_updater "$PLUGIN_NAME" "$REPO_LOC" "$TIME_THRESHOLD"
+}
+
+# Sources a plugin to load it on the shell
+# $1: Plugin's author
+# $2: Plugin name
+_source_plugin() {
+    local directory
+
+    if [ -f "$ZSH_PLUGIN_DIR/$2/$2.plugin.zsh" ]; then
+        directory="$ZSH_PLUGIN_DIR/$2/$2.plugin.zsh"
+
+    elif [ -f "$ZSH_PLUGIN_DIR/$2/$2.zsh" ]; then
+        directory="$ZSH_PLUGIN_DIR/$2/$2.zsh"
+
+    # This one is for powerlevel10k
+    elif [ -f "$ZSH_PLUGIN_DIR/$2/$2.zsh-theme" ]; then
+        directory="$ZSH_PLUGIN_DIR/$2/$2.zsh-theme"
+
+    else
+        echo -e "${RED}Error adding plugin $2:${NO_COLOR} Script not found"
+        return 1
+    fi
+
+    if ! source "$directory"; then
+        echo -e "${RED}Error adding plugin $2:${NO_COLOR} Unknown error"
+        return 1
+    fi
+
+
+    # Adds the sourced plugin to the plugin list
+    PLUGIN_LIST=("${PLUGIN_LIST[@]}" "$2")
+
+    return 0
+}
+
+
+# Generic function to add a plugin to zsh.
+# $1: user/plugin format. 
+# $2: repo URL.
+# $2 (optional): extra git params (like --depth).
+_generic_add_plugin() {
+    local AUTHOR=$(echo "$1" | cut -d "/" -f 1)
+    local PLUGIN_NAME=$(echo "$1" | cut -d "/" -f 2)
+    local -r URL="$2"
+
+    # Se comprueba si existe el directorio, indicando que se ha descargado
+    if [ ! -d "$ZSH_PLUGIN_DIR/$PLUGIN_NAME" ]; then
+        local -r raw_msg="Installing $PLUGIN_NAME"
+        print_message "Installing $GREEN$PLUGIN_NAME$NO_COLOR" "$((COLUMNS - 4))" "$BRIGHT_CYAN#$NO_COLOR" "${#raw_msg}"
+
+        # Si se pide algun comando extra a git, se pone como entrada a la funcion
+        if [ -z "$3" ]; then
+            git clone "$URL$AUTHOR/$PLUGIN_NAME.git" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
+        else
+            git clone "$3" "$URL$AUTHOR/$PLUGIN_NAME.git" "$ZSH_PLUGIN_DIR/$PLUGIN_NAME"
+        fi
+
+        # Solo en caso de que haya tenido exito el clonado
+        if [ "$?" -eq 0 ]; then
+            # Se le añade una marca de tiempo para que cuando pase un tiempo determinado haga pull al plugin indicado
+            date +%s >"$ZSH_PLUGIN_DIR/.$PLUGIN_NAME"
+        else
+            echo -e "${RED}Error installing $PLUGIN_NAME${NO_COLOR}"
+
+            return 1
+        fi
+    fi
+
+    _auto_update_plugin "$PLUGIN_NAME"
+    _source_plugin "$AUTHOR" "$PLUGIN_NAME"    
 }

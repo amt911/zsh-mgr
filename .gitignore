@@ -1,2 +1,5 @@
 .zshrc
 p.sh
+test
+plugins.json
+config.json

@@ -143,6 +143,8 @@ _max_char_table(){
 
     # echo -e "${TABLE[1]}\nY su tamaño es: $FIL\nY el otro es: $COL"
 
+    local j
+    local i
     # {1..$FIL}: Only works in zsh 
     for j in {1..$COL}
     do
@@ -155,6 +157,7 @@ _max_char_table(){
             
             [ "$entry_len" -gt "$max" ] && max="$entry_len"
         done
+        unset i
 
         max=$((max+extra))
 
@@ -164,6 +167,7 @@ _max_char_table(){
             res+="$max$DELIM"
         fi
     done
+    unset j
 
     echo "$res"
 }
@@ -185,6 +189,7 @@ _color_row(){
     local res=""
     local aux
 
+    local i
     for i in {1..$COL_NUM}
     do
         if [ "$i" -eq "$COL_NUM" ];then
@@ -196,6 +201,7 @@ _color_row(){
             res+="${COLOR}$aux${NO_COLOR}$DELIM"
         fi
     done
+    unset i
 
     echo -e "$res"
 }
@@ -223,6 +229,7 @@ _change_column_entry(){
         return 0
     fi
 
+    local i
     for i in {1..$COL_NUM}
     do
         if [ "$i" -eq "$COL_POS" ];
@@ -237,6 +244,7 @@ _change_column_entry(){
             res+="$DELIM"
         fi
     done
+    unset i
 
     echo "$res"
 }
@@ -260,6 +268,7 @@ _create_table(){
     local -r DELIM="$2"
     local -r MAX_CHAR_COL=$(_max_char_table "$1" "$DELIM" "2")
     local -r COL_NUM=$(_get_column_length "${RAW_TABLE[1]}" "$DELIM")
+    local i
 
     if [ "${#RAW_TABLE[@]}" -eq "0" ];
     then
@@ -286,6 +295,7 @@ _create_table(){
 
         [ "$COL_NUM" -gt "1" ] && [ "$i" -lt "$COL_NUM" ] && printf "${COLOR}┬${NO_COLOR}"
     done
+    unset i
     printf "${COLOR}┐${NO_COLOR}\n"
 
     # Content of table
@@ -293,6 +303,8 @@ _create_table(){
     local max_length="0"
     local msg_length="0"
     local -r SPACE_CHAR=" "
+    local j
+    local k
 
     for i in {1..${#TABLE[@]}}
     do
@@ -322,6 +334,7 @@ _create_table(){
 
             printf "${COLOR}│${NO_COLOR}"
         done
+        unset j
 
         # Print the middle line
         printf "\n"
@@ -330,15 +343,17 @@ _create_table(){
         then
             printf "${COLOR}├${NO_COLOR}"
 
-            for i in {1..$COL_NUM}
+            for k in {1..$COL_NUM}
             do
-                printf "%0.s${COLOR}─${NO_COLOR}" $(seq 1 "$(_get_column_text_at "$MAX_CHAR_COL" "$i" "$DELIM")")
+                printf "%0.s${COLOR}─${NO_COLOR}" $(seq 1 "$(_get_column_text_at "$MAX_CHAR_COL" "$k" "$DELIM")")
 
-                [ "$COL_NUM" -gt "1" ] && [ "$i" -lt "$COL_NUM" ] && printf "${COLOR}┼${NO_COLOR}"
+                [ "$COL_NUM" -gt "1" ] && [ "$k" -lt "$COL_NUM" ] && printf "${COLOR}┼${NO_COLOR}"
             done
+            unset k
             printf "${COLOR}┤${NO_COLOR}\n"    
         fi
     done
+    unset i
 
 
     # Bottom of table
@@ -350,5 +365,15 @@ _create_table(){
 
         [ "$COL_NUM" -gt "1" ] && [ "$i" -lt "$COL_NUM" ] && printf "${COLOR}┴${NO_COLOR}"
     done
+    unset i
     printf "${COLOR}┘${NO_COLOR}\n"
+}
+
+# Checks if a command exists.
+# $1: Command name.
+# return: returns 0 if the command exists. 1 otherwise.
+check_cmd_exists(){
+    local -r CMD="$1"
+
+    command -v "$CMD" > /dev/null
 }
