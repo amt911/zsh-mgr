@@ -2,6 +2,7 @@ use anyhow::Result;
 use colored::Colorize;
 use std::fs;
 use std::path::PathBuf;
+use zsh_mgr_rs::config::real_home_dir;
 
 pub fn run(plugins_file: Option<String>) -> Result<()> {
     // Determine plugins file path
@@ -11,7 +12,7 @@ pub fn run(plugins_file: Option<String>) -> Result<()> {
         // Default locations to search
         let candidates = vec![
             dirs::config_dir().map(|p| p.join("zsh/default-plugins.txt")),
-            dirs::home_dir().map(|p| p.join(".config/zsh/default-plugins.txt")),
+            real_home_dir().map(|p| p.join(".config/zsh/default-plugins.txt")),
         ];
         
         candidates

@@ -2,7 +2,7 @@ use anyhow::Result;
 use colored::Colorize;
 use std::fs;
 use std::path::PathBuf;
-use zsh_mgr_rs::config::{Config, PluginList};
+use zsh_mgr_rs::config::{Config, PluginList, real_home_dir};
 
 pub fn run(zshrc_path: Option<String>) -> Result<()> {
     let config = Config::load()?;
@@ -32,7 +32,7 @@ pub fn run(zshrc_path: Option<String>) -> Result<()> {
     let zshrc = if let Some(path) = zshrc_path {
         PathBuf::from(shellexpand::tilde(&path).to_string())
     } else {
-        dirs::home_dir()
+        real_home_dir()
             .ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?
             .join(".zshrc")
     };

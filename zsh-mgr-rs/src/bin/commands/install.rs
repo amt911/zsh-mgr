@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use colored::Colorize;
 use std::fs;
 use std::io::{self, Write};
-use zsh_mgr_rs::config::Config;
+use zsh_mgr_rs::config::{Config, real_home_dir};
 
 pub fn run(
     plugin_dir: Option<String>,
@@ -24,7 +24,7 @@ pub fn run(
     }
     
     // Determine plugin directory
-    let home = dirs::home_dir().context("Cannot determine HOME directory")?;
+    let home = real_home_dir().context("Cannot determine HOME directory")?;
     let plugin_dir = if let Some(dir) = plugin_dir {
         std::path::PathBuf::from(shellexpand::tilde(&dir).to_string())
     } else if quiet || installed_via_package {

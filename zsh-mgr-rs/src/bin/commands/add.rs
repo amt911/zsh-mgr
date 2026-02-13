@@ -25,20 +25,20 @@ pub fn run(plugin: String, flags: Option<String>, private: bool) -> Result<()> {
     
     // Clone repository
     println!("{} Cloning {}...", "📦".cyan(), plugin);
-    
+
     let mut cmd = Command::new("git");
     cmd.arg("clone");
-    
+
     if let Some(ref f) = flags {
         for flag in f.split_whitespace() {
             cmd.arg(flag);
         }
     }
-    
+
     cmd.arg(&url).arg(&plugin_dir);
-    
+
     let status = cmd.status().context("Failed to execute git clone")?;
-    
+
     if !status.success() {
         anyhow::bail!("Git clone failed for {}", plugin);
     }

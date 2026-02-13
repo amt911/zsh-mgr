@@ -3,6 +3,41 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// Get the real home directory of the current user from the system's passwd database.
+/// This ignores `$HOME`, which `sudo` can preserve incorrectly (pointing to
+/// another user's home).  We look up the effective UID and resolve it through
+/// `getent passwd <uid>`.
+pub fn real_home_dir() -> Option<PathBuf> {
+    use std::process::Command;
+
+    // 1. Obtain the current effective UID
+    let uid_output = Command::new("id").arg("-u").output().ok()?;
+    if !uid_output.status.success() {
+        return dirs::home_dir();
+    }
+    let uid = String::from_utf8_lossy(&uid_output.stdout);
+    let uid = uid.trim();
+
+    // 2. Look up the passwd entry for that UID
+    let pw_output = Command::new("getent")
+        .args(["passwd", uid])
+        .output()
+        .ok()?;
+    if pw_output.status.success() {
+        let line = String::from_utf8_lossy(&pw_output.stdout);
+        // Format: name:x:uid:gid:gecos:home:shell
+        if let Some(home) = line.split(':').nth(5) {
+            let home = home.trim();
+            if !home.is_empty() {
+                return Some(PathBuf::from(home));
+            }
+        }
+    }
+
+    // Fallback to dirs::home_dir() (uses $HOME)
+    dirs::home_dir()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub plugin_dir: PathBuf,
@@ -14,7 +49,7 @@ pub struct Config {
 impl Config {
     /// Load configuration from environment or defaults
     pub fn load() -> Result<Self> {
-        let home = dirs::home_dir().context("Cannot determine HOME directory")?;
+        let home = real_home_dir().context("Cannot determine HOME directory")?;
         
         let plugin_dir = std::env::var("ZSH_PLUGIN_DIR")
             .map(PathBuf::from)
